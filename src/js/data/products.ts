@@ -17,7 +17,7 @@ export interface Product {
   care: string;
   fit: string;
   sizes: string[];
-  colors: { name: string; hex: string }[];
+  colors: { name: string; hex: string; image?: string }[];
   stock: number;
   mood: 'CONFIDENT' | 'ROMANTIC' | 'MINIMAL' | 'BOLD';
   isDay: boolean;
@@ -46,9 +46,9 @@ export const PRODUCTS_DATA: Product[] = [
     fit: 'True to size. Model is 5\'8" wearing size S.',
     sizes: ['XS', 'S', 'M', 'L', 'XL'],
     colors: [
-      { name: 'Noir Black', hex: '#151515' },
-      { name: 'Champagne Gold', hex: '#C5A880' },
-      { name: 'Dusty Rose', hex: '#D4A59A' }
+      { name: 'Noir Black', hex: '#151515', image: '/images/shop_look_model.png' },
+      { name: 'Champagne Gold', hex: '#C5A880', image: '/images/hero_model.png' },
+      { name: 'Dusty Rose', hex: '#D4A59A', image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80' }
     ],
     stock: 14,
     mood: 'CONFIDENT',
@@ -76,8 +76,8 @@ export const PRODUCTS_DATA: Product[] = [
     fit: 'Relaxed fit with adjustable belt.',
     sizes: ['XS', 'S', 'M', 'L'],
     colors: [
-      { name: 'Ivory White', hex: '#F8F5F0' },
-      { name: 'Soft Beige', hex: '#EAE3D9' }
+      { name: 'Ivory White', hex: '#F8F5F0', image: '/images/hero_model.png' },
+      { name: 'Soft Beige', hex: '#EAE3D9', image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=800&q=80' }
     ],
     stock: 22,
     mood: 'MINIMAL',
@@ -105,8 +105,8 @@ export const PRODUCTS_DATA: Product[] = [
     fit: 'Dimensions: 32cm x 24cm x 12cm.',
     sizes: ['One Size'],
     colors: [
-      { name: 'Champagne Gold', hex: '#C5A880' },
-      { name: 'Espresso', hex: '#2A2A2A' }
+      { name: 'Champagne Gold', hex: '#C5A880', image: '/images/designer_bag.png' },
+      { name: 'Espresso', hex: '#2A2A2A', image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80' }
     ],
     stock: 9,
     mood: 'CONFIDENT',
@@ -134,8 +134,8 @@ export const PRODUCTS_DATA: Product[] = [
     fit: 'Heel height 8.5cm.',
     sizes: ['36', '37', '38', '39', '40'],
     colors: [
-      { name: 'Gold', hex: '#D4AF37' },
-      { name: 'Black', hex: '#151515' }
+      { name: 'Gold', hex: '#D4AF37', image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=800&q=80' },
+      { name: 'Black', hex: '#151515', image: 'https://images.unsplash.com/photo-1560343776-97e7d202ff0e?auto=format&fit=crop&w=800&q=80' }
     ],
     stock: 12,
     mood: 'BOLD',
@@ -163,7 +163,7 @@ export const PRODUCTS_DATA: Product[] = [
     fit: 'Length 40cm + 5cm extension.',
     sizes: ['One Size'],
     colors: [
-      { name: 'Yellow Gold', hex: '#D4AF37' }
+      { name: 'Yellow Gold', hex: '#D4AF37', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80' }
     ],
     stock: 25,
     mood: 'ROMANTIC',
@@ -191,8 +191,8 @@ export const PRODUCTS_DATA: Product[] = [
     fit: 'Wrap adjustable silhouette.',
     sizes: ['XS', 'S', 'M', 'L'],
     colors: [
-      { name: 'Dusty Rose', hex: '#D4A59A' },
-      { name: 'Cream', hex: '#FAF9F6' }
+      { name: 'Dusty Rose', hex: '#D4A59A', image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80' },
+      { name: 'Cream', hex: '#FAF9F6', image: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=800&q=80' }
     ],
     stock: 8,
     mood: 'ROMANTIC',
@@ -220,8 +220,8 @@ export const PRODUCTS_DATA: Product[] = [
     fit: 'Structured tailored fit.',
     sizes: ['S', 'M', 'L', 'XL'],
     colors: [
-      { name: 'Espresso', hex: '#2A2A2A' },
-      { name: 'Nude', hex: '#EAE3D9' }
+      { name: 'Espresso', hex: '#2A2A2A', image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=800&q=80' },
+      { name: 'Nude', hex: '#EAE3D9', image: 'https://images.unsplash.com/photo-1548624149-f1b96a400792?auto=format&fit=crop&w=800&q=80' }
     ],
     stock: 18,
     mood: 'CONFIDENT',
@@ -249,8 +249,8 @@ export const PRODUCTS_DATA: Product[] = [
     fit: 'Compact evening fit.',
     sizes: ['One Size'],
     colors: [
-      { name: 'Black', hex: '#151515' },
-      { name: 'Ivory', hex: '#F8F5F0' }
+      { name: 'Black', hex: '#151515', image: 'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=800&q=80' },
+      { name: 'Ivory', hex: '#F8F5F0', image: 'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=800&q=80' }
     ],
     stock: 15,
     mood: 'BOLD',

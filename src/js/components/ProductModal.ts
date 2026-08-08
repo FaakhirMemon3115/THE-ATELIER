@@ -47,7 +47,7 @@ export function renderProductModal(): string {
                 ${product.colors
                   .map(
                     (c, i) => `
-                  <div class="color-swatch ${i === 0 ? 'selected' : ''}" style="background-color: ${c.hex};" data-color="${c.name}"></div>
+                  <div class="color-swatch ${i === 0 ? 'selected' : ''}" style="background-color: ${c.hex};" data-color="${c.name}" data-color-image="${c.image || product.primaryImage}" title="${c.name}"></div>
                 `
                   )
                   .join('')}

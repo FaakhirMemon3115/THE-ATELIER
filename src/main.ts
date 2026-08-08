@@ -269,8 +269,20 @@ function attachEventHandlers() {
       document.querySelectorAll('.color-swatch').forEach((s) => s.classList.remove('selected'));
       swatch.classList.add('selected');
       const colorName = swatch.getAttribute('data-color');
+      const colorImg = swatch.getAttribute('data-color-image');
       const label = document.getElementById('selected-color-label');
       if (label && colorName) label.textContent = colorName;
+
+      // Update main product modal image to selected color image with smooth transition
+      const mainImg = document.getElementById('modal-main-image') as HTMLImageElement;
+      if (mainImg && colorImg) {
+        mainImg.style.transition = 'opacity 0.2s ease-in-out';
+        mainImg.style.opacity = '0.3';
+        setTimeout(() => {
+          mainImg.src = colorImg;
+          mainImg.style.opacity = '1';
+        }, 150);
+      }
     });
   });
 
