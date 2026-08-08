@@ -3,7 +3,7 @@ import { PRODUCTS_DATA } from '../data/products';
 import { renderProductCard } from '../components/ProductCard';
 import { store } from '../data/mockState';
 
-export function renderHomePage(): string {
+export function renderHomePage(showLoader = false): string {
   // Filter products by selected mood if active
   const moodFilteredProducts =
     store.activeMood === 'ALL'
@@ -15,11 +15,17 @@ export function renderHomePage(): string {
   const timeFilteredProducts = PRODUCTS_DATA.filter((p) => (isNight ? p.isNight : p.isDay));
 
   return `
-    <!-- 01. Brand Reveal Intro Loader -->
-    <div class="brand-reveal-overlay" id="brand-loader">
-      <div class="brand-reveal-logo">THE ATELIER</div>
-      <div class="brand-reveal-sub">EST. 2026 — HAUTE COUTURE</div>
-    </div>
+    <!-- 01. Brand Reveal Intro Loader (Only shown on initial website load / refresh) -->
+    ${
+      showLoader
+        ? `
+      <div class="brand-reveal-overlay" id="brand-loader">
+        <div class="brand-reveal-logo">THE ATELIER</div>
+        <div class="brand-reveal-sub">EST. 2026 — HAUTE COUTURE</div>
+      </div>
+    `
+        : ''
+    }
 
     <!-- 02. Hero Section ("THE NEW ERA") -->
     <section class="hero-section">

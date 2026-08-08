@@ -22,7 +22,7 @@ let quizAnswers: string[] = [];
 let accountTab = 'orders';
 let adminTab = 'dashboard';
 let confirmedOrderData: any = null;
-let currentShopCategory = 'ALL';
+let hasBrandLoaded = false;
 
 // Builder state
 let builderSelected: Record<string, string> = {
@@ -36,7 +36,7 @@ function renderApp() {
   // 1. Determine main content based on route
   let mainContent = '';
   if (store.activeRoute === 'home') {
-    mainContent = renderHomePage();
+    mainContent = renderHomePage(!hasBrandLoaded);
   } else if (store.activeRoute === 'shop') {
     mainContent = renderShopPage(currentShopCategory);
   } else if (store.activeRoute === 'checkout') {
