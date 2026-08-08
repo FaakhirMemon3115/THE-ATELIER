@@ -1,0 +1,564 @@
+/* ==========================================================================
+   THE ATELIER — HOMEPAGE & EDITORIAL SECTIONS STYLES
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Opening Experience (Brand Reveal Overlay)
+   -------------------------------------------------------------------------- */
+.brand-reveal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: #0F0F0F;
+  color: #F8F5F0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s ease-in-out, visibility 0.8s;
+}
+
+.brand-reveal-overlay.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.brand-reveal-logo {
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-weight: 300;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: revealText 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+}
+
+.brand-reveal-sub {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.4em;
+  color: var(--color-gold);
+  text-transform: uppercase;
+  margin-top: 16px;
+  opacity: 0;
+  animation: revealText 1s ease 0.8s forwards;
+}
+
+@keyframes revealText {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. Hero Section ("THE NEW ERA")
+   -------------------------------------------------------------------------- */
+.hero-section {
+  position: relative;
+  min-height: calc(100vh - var(--header-height));
+  display: flex;
+  align-items: center;
+  background-color: var(--color-ivory-warm);
+  overflow: hidden;
+  padding: var(--space-2xl) 0;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: var(--space-2xl);
+}
+
+.hero-tag {
+  font-size: 0.8rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+  display: block;
+}
+
+.hero-title {
+  font-family: var(--font-serif);
+  font-size: clamp(3rem, 7vw, 6rem);
+  line-height: 0.95;
+  text-transform: uppercase;
+  margin-bottom: var(--space-lg);
+  font-weight: 400;
+}
+
+.hero-desc {
+  font-size: 1.05rem;
+  color: var(--color-muted);
+  max-width: 480px;
+  margin-bottom: var(--space-xl);
+  font-weight: 300;
+}
+
+.hero-image-wrapper {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.hero-image-wrapper img {
+  width: 100%;
+  max-height: 700px;
+  object-fit: cover;
+  transition: transform 1.2s ease;
+}
+
+.hero-image-wrapper:hover img {
+  transform: scale(1.03);
+}
+
+.hero-badge-overlay {
+  position: absolute;
+  bottom: 30px;
+  left: -20px;
+  background-color: var(--glass-bg);
+  backdrop-filter: var(--glass-backdrop);
+  padding: 16px 28px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
+}
+
+.hero-badge-number {
+  font-family: var(--font-serif);
+  font-size: 2.5rem;
+  color: var(--color-gold);
+  line-height: 1;
+}
+
+.hero-badge-text {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   3. The Atelier Index (Editorial Contents Showcase)
+   -------------------------------------------------------------------------- */
+.atelier-index-section {
+  padding: var(--space-3xl) 0;
+  background-color: var(--color-bg-pure);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.index-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--space-3xl);
+  align-items: center;
+}
+
+.index-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--color-border);
+}
+
+.index-item {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: padding var(--transition-medium), color var(--transition-medium);
+}
+
+.index-item:hover {
+  padding-left: 16px;
+  color: var(--color-gold);
+}
+
+.index-num {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  color: var(--color-gold);
+  margin-right: 20px;
+}
+
+.index-name {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.index-arrow {
+  font-size: 1.2rem;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all var(--transition-medium);
+}
+
+.index-item:hover .index-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.index-preview-container {
+  position: relative;
+  height: 480px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background-color: var(--color-nude);
+  box-shadow: var(--shadow-md);
+}
+
+.index-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+  transform: scale(1.05);
+}
+
+.index-preview-img.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* --------------------------------------------------------------------------
+   4. Shop The Look (Hotspots Section)
+   -------------------------------------------------------------------------- */
+.shop-look-section {
+  padding: var(--space-3xl) 0;
+  background-color: var(--color-ivory-warm);
+}
+
+.shop-look-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3xl);
+  align-items: center;
+}
+
+.hotspots-image-card {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.hotspot-pin {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background-color: #FFFFFF;
+  border: 2px solid var(--color-gold);
+  border-radius: 50%;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  animation: floatHotspot 2.5s infinite ease-in-out;
+  z-index: 10;
+}
+
+.hotspot-pin::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-black);
+  border-radius: 50%;
+}
+
+.hotspot-card-popover {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-black);
+  color: var(--color-ivory);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  box-shadow: var(--shadow-md);
+  z-index: 20;
+}
+
+.hotspot-pin:hover .hotspot-card-popover {
+  opacity: 1;
+}
+
+.look-bundle-card {
+  background-color: #FFFFFF;
+  padding: var(--space-2xl);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+}
+
+.bundle-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.bundle-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20px;
+  margin-top: 10px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: var(--font-serif);
+}
+
+/* --------------------------------------------------------------------------
+   5. Create Your Look (Interactive Look Builder)
+   -------------------------------------------------------------------------- */
+.look-builder-section {
+  padding: var(--space-3xl) 0;
+  background-color: var(--color-bg-pure);
+}
+
+.builder-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 340px;
+  gap: var(--space-xl);
+  align-items: start;
+  background-color: var(--color-ivory);
+  padding: var(--space-xl);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.builder-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.builder-cat-btn {
+  padding: 14px 20px;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-light);
+  background-color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all var(--transition-fast);
+
+}
+
+.builder-cat-btn:hover,
+.builder-cat-btn.active {
+  background-color: var(--color-black);
+  color: var(--color-ivory);
+  border-color: var(--color-black);
+}
+
+.builder-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.builder-item-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  background-color: #FFFFFF;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.builder-item-card:hover,
+.builder-item-card.selected {
+  border-color: var(--color-gold);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.builder-item-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+
+.builder-item-info {
+  padding: 8px;
+  font-size: 0.75rem;
+}
+
+.builder-preview-canvas {
+  position: relative;
+  height: 520px;
+  background-color: #FAF5EE;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.builder-model-base {
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.builder-summary-panel {
+  background-color: #FFFFFF;
+  padding: 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+/* --------------------------------------------------------------------------
+   6. Mood -> Look Section
+   -------------------------------------------------------------------------- */
+.mood-section {
+  padding: var(--space-3xl) 0;
+  background-color: var(--color-ivory-warm);
+  text-align: center;
+}
+
+.mood-selector-wrap {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+  margin-bottom: var(--space-2xl);
+  flex-wrap: wrap;
+}
+
+.mood-btn {
+  padding: 12px 30px;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--text-current);
+  border-radius: var(--radius-pill);
+  transition: all var(--transition-medium);
+}
+
+.mood-btn:hover,
+.mood-btn.active {
+  background-color: var(--color-black);
+  color: var(--color-gold-bright);
+  border-color: var(--color-black);
+  box-shadow: var(--shadow-md);
+}
+
+/* --------------------------------------------------------------------------
+   7. Day / Night Slider Section
+   -------------------------------------------------------------------------- */
+.day-night-section {
+  padding: var(--space-3xl) 0;
+  background-color: var(--color-bg-pure);
+  transition: background-color 0.8s ease;
+}
+
+.time-slider-wrap {
+  max-width: 600px;
+  margin: var(--space-xl) auto;
+  text-align: center;
+}
+
+.time-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.time-range-input {
+  width: 100%;
+  accent-color: var(--color-gold);
+  height: 6px;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   8. Style DNA Quiz Modal
+   -------------------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.quiz-card {
+  background-color: var(--color-ivory-warm);
+  width: 100%;
+  max-width: 650px;
+  padding: var(--space-2xl);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  border: 1px solid var(--color-border);
+}
+
+.quiz-option-btn {
+  width: 100%;
+  padding: 16px 20px;
+  text-align: left;
+  border: 1px solid var(--color-border);
+  background: #FFFFFF;
+  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.quiz-option-btn:hover {
+  border-color: var(--color-gold);
+  background-color: #FAF5EE;
+}
+
+@media (max-width: 992px) {
+  .hero-grid, .index-grid, .shop-look-grid { grid-template-columns: 1fr; }
+  .builder-layout { grid-template-columns: 1fr; }
+}
