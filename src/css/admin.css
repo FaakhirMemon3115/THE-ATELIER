@@ -1,0 +1,149 @@
+/* ==========================================================================
+   THE ATELIER — ADMIN PANEL STYLES
+   ========================================================================== */
+
+.admin-container {
+  padding: var(--space-2xl) 0 var(--space-3xl);
+}
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--space-2xl);
+}
+
+.admin-sidebar {
+  background-color: var(--color-black);
+  color: var(--color-ivory);
+  padding: 24px;
+  border-radius: var(--radius-sm);
+}
+
+.admin-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  color: var(--color-gold);
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-nav-btn {
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.85rem;
+  color: #A0A0A0;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+
+}
+
+.admin-nav-btn:hover,
+.admin-nav-btn.active {
+  background-color: rgba(197, 168, 128, 0.2);
+  color: var(--color-gold-bright);
+}
+
+/* KPI Cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-2xl);
+}
+
+.kpi-card {
+  background-color: #FFFFFF;
+  padding: 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi-val {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: var(--color-black);
+  margin: 6px 0;
+}
+
+.kpi-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+}
+
+/* Data Table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 0.85rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.data-table th {
+  background-color: var(--color-ivory);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-pending { background-color: #FEF9E7; color: #F39C12; }
+.status-confirmed { background-color: #E8F8F5; color: #1ABC9C; }
+.status-shipped { background-color: #EBF5FB; color: #3498DB; }
+.status-delivered { background-color: #EAFAF1; color: #27AE60; }
+.status-cancelled { background-color: #FDEDEC; color: #E74C3C; }
+
+/* Admin Form Input */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  background-color: #FFFFFF;
+  outline: none;
+}
+
+.form-control:focus {
+  border-color: var(--color-gold);
+}
+
+@media (max-width: 992px) {
+  .admin-layout { grid-template-columns: 1fr; }
+}
