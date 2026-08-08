@@ -20,7 +20,7 @@ export function renderNavbar(): string {
       <div class="container header-inner">
         <!-- Logo -->
         <a href="#" class="brand-logo" data-route="home">
-          THE ATELIER<span class="logo-dot"></span>
+          <img src="/assets/the-atelier-logo.svg" alt="THE ATELIER" style="height: 52px; width: auto; display: block;" />
         </a>
 
         <!-- Navigation Menu -->
