@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 90" width="320" height="90">
+  <!-- Top text: T H E -->
+  <text x="160" y="20" text-anchor="middle" fill="#F4F0EA" font-family="'Inter', sans-serif" font-size="13" font-weight="600" letter-spacing="9">T H E</text>
+  
+  <!-- Main brand text: ATELIER -->
+  <text x="160" y="58" text-anchor="middle" fill="#F4F0EA" font-family="'Cormorant Garamond', 'Playfair Display', Georgia, serif" font-size="44" font-weight="600" letter-spacing="4">ATELIER</text>
+  
+  <!-- Bottom EST. 2026 flanked by lines -->
+  <line x1="45" y1="74" x2="115" y2="74" stroke="#C5A880" stroke-width="1.2" opacity="0.8"/>
+  <text x="160" y="78" text-anchor="middle" fill="#C5A880" font-family="'Inter', sans-serif" font-size="10" font-weight="600" letter-spacing="3">EST. 2026</text>
+  <line x1="205" y1="74" x2="275" y2="74" stroke="#C5A880" stroke-width="1.2" opacity="0.8"/>
+</svg>
