@@ -8,6 +8,7 @@ import { renderProductModal } from './js/components/ProductModal';
 import { renderStyleDNAQuizModal } from './js/components/StyleDNAQuiz';
 import { renderSearchOverlay } from './js/components/SearchOverlay';
 import { renderAuthModal, validatePassword } from './js/components/AuthModal';
+import { renderAdminProductModal } from './js/components/AdminProductModal';
 import { renderHomePage } from './js/pages/Home';
 import { renderShopPage } from './js/pages/ShopPage';
 import type { FilterState } from './js/pages/ShopPage';
@@ -25,6 +26,9 @@ let quizAnswers: string[] = [];
 
 let isAuthModalOpen = false;
 let authActiveTab: 'login' | 'register' = 'login';
+
+let isAdminProdModalOpen = false;
+let editingAdminProduct: Product | null = null;
 
 let accountTab = 'orders';
 let adminTab = 'dashboard';
@@ -166,6 +170,7 @@ function renderApp() {
     ${isQuizOpen ? renderStyleDNAQuizModal(quizStep, quizAnswers) : ''}
     ${isSearchOpen ? renderSearchOverlay(searchQuery) : ''}
     ${isAuthModalOpen ? renderAuthModal(authActiveTab) : ''}
+    ${isAdminProdModalOpen ? renderAdminProductModal(editingAdminProduct) : ''}
 
     <!-- Toast Container -->
     <div id="toast-container" class="toast-container"></div>
@@ -282,7 +287,7 @@ function attachEventHandlers() {
     });
   }
 
-  // Real-Time Password Requirements Checklist Listener (Turns BLACK with checkmark as criteria met!)
+  // Real-Time Password Requirements Checklist Listener
   const regPasswordInput = document.getElementById('reg-password') as HTMLInputElement;
   if (regPasswordInput) {
     regPasswordInput.addEventListener('input', () => {
@@ -352,7 +357,7 @@ function attachEventHandlers() {
     });
   }
 
-  // Registration Form Submission (With Password Validation & Auto-Login)
+  // Registration Form Submission
   const registerForm = document.getElementById('auth-register-form') as HTMLFormElement;
   if (registerForm) {
     registerForm.addEventListener('submit', (e) => {
@@ -699,7 +704,7 @@ function attachEventHandlers() {
     });
   }
 
-  // Admin Panel Event Handlers
+  // Admin Panel Tab Switcher
   document.querySelectorAll('[data-admin-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const tab = btn.getAttribute('data-admin-tab');
@@ -738,7 +743,7 @@ function attachEventHandlers() {
       const id = btn.getAttribute('data-user-id');
       if (id && confirm('Permanently remove this user record?')) {
         store.removeUser(id);
-        showToast('User removed.');
+        showToast('User removed from database.');
         renderApp();
       }
     });
@@ -760,74 +765,140 @@ function attachEventHandlers() {
     });
   }
 
-  // Admin Product CRUD Handlers
-  const adminAddProdBtn = document.getElementById('admin-add-product-btn');
-  if (adminAddProdBtn) {
-    adminAddProdBtn.addEventListener('click', () => {
-      const name = prompt('Enter Product Name:', 'Silk Evening Robe');
-      if (!name) return;
-      const priceStr = prompt('Enter Product Price (Rs):', '8500');
-      if (!priceStr) return;
-      const category = (prompt('Enter Category (Clothing / Bags / Footwear / Accessories):', 'Clothing') || 'Clothing') as any;
-
-      const newProd: Product = {
-        id: `prod-${Date.now()}`,
-        sku: `ATL-NEW-${Math.floor(100 + Math.random() * 900)}`,
-        name,
-        category,
-        subcategory: 'Dresses',
-        price: parseInt(priceStr, 10),
-        rating: 5.0,
-        reviewsCount: 1,
-        primaryImage: '/images/hero_model.png',
-        secondaryImage: '/images/shop_look_model.png',
-        description: 'Exclusive haute couture piece newly crafted for Atelier catalog.',
-        material: 'Silk Georgette',
-        care: 'Dry clean only',
-        fit: 'Regular fit',
-        sizes: ['S', 'M', 'L'],
-        colors: [{ name: 'Ivory', hex: '#F8F5F0' }],
-        stock: 25,
-        mood: 'CONFIDENT',
-        isDay: true,
-        isNight: true
-      };
-
-      store.addProduct(newProd);
-      showToast(`Product "${name}" added to catalog!`);
+  // Admin Product Modal Triggers (Add & Edit)
+  const openAddProdModalBtn = document.getElementById('admin-add-prod-modal-btn');
+  if (openAddProdModalBtn) {
+    openAddProdModalBtn.addEventListener('click', () => {
+      editingAdminProduct = null;
+      isAdminProdModalOpen = true;
       renderApp();
     });
   }
 
-  document.querySelectorAll('.btn-del-prod').forEach((btn) => {
+  document.querySelectorAll('.btn-edit-prod-modal').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-prod-id');
-      if (id && confirm('Are you sure you want to delete this product from store?')) {
-        store.deleteProduct(id);
-        showToast('Product deleted from catalog.');
+      const prod = store.products.find((p) => p.id === id);
+      if (prod) {
+        editingAdminProduct = prod;
+        isAdminProdModalOpen = true;
         renderApp();
       }
     });
   });
 
-  document.querySelectorAll('.btn-edit-prod').forEach((btn) => {
+  const closeAdminProdModalBtn = document.getElementById('close-admin-prod-modal-btn');
+  const cancelAdminProdModalBtn = document.getElementById('cancel-admin-prod-modal-btn');
+  const adminProdOverlay = document.getElementById('admin-product-modal-overlay');
+
+  if (closeAdminProdModalBtn) {
+    closeAdminProdModalBtn.addEventListener('click', () => {
+      isAdminProdModalOpen = false;
+      renderApp();
+    });
+  }
+
+  if (cancelAdminProdModalBtn) {
+    cancelAdminProdModalBtn.addEventListener('click', () => {
+      isAdminProdModalOpen = false;
+      renderApp();
+    });
+  }
+
+  if (adminProdOverlay) {
+    adminProdOverlay.addEventListener('click', (e) => {
+      if (e.target === adminProdOverlay) {
+        isAdminProdModalOpen = false;
+        renderApp();
+      }
+    });
+  }
+
+  // Admin Product Modal Form Submit (Create / Edit CRUD Database)
+  const adminProdForm = document.getElementById('admin-product-form') as HTMLFormElement;
+  if (adminProdForm) {
+    adminProdForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = (document.getElementById('prod-form-id') as HTMLInputElement).value;
+      const name = (document.getElementById('prod-form-name') as HTMLInputElement).value.trim();
+      const sku = (document.getElementById('prod-form-sku') as HTMLInputElement).value.trim();
+      const category = (document.getElementById('prod-form-category') as HTMLSelectElement).value as any;
+      const subcategory = (document.getElementById('prod-form-subcategory') as HTMLInputElement).value.trim();
+      const price = parseInt((document.getElementById('prod-form-price') as HTMLInputElement).value, 10);
+      const stock = parseInt((document.getElementById('prod-form-stock') as HTMLInputElement).value, 10);
+      const primaryImage = (document.getElementById('prod-form-primary-img') as HTMLInputElement).value.trim();
+      const secondaryImage = (document.getElementById('prod-form-secondary-img') as HTMLInputElement).value.trim();
+      const description = (document.getElementById('prod-form-desc') as HTMLTextAreaElement).value.trim();
+      const material = (document.getElementById('prod-form-material') as HTMLInputElement).value.trim();
+      const care = (document.getElementById('prod-form-care') as HTMLInputElement).value.trim();
+
+      if (id) {
+        // Update existing product
+        const existing = store.products.find((p) => p.id === id);
+        if (existing) {
+          const updatedProd: Product = {
+            ...existing,
+            name,
+            sku,
+            category,
+            subcategory,
+            price,
+            stock,
+            primaryImage,
+            secondaryImage: secondaryImage || existing.secondaryImage,
+            description,
+            material: material || existing.material,
+            care: care || existing.care
+          };
+          store.updateProduct(updatedProd);
+          showToast(`Updated product "${name}" in database.`);
+        }
+      } else {
+        // Create new product
+        const newProd: Product = {
+          id: `prod-${Date.now()}`,
+          sku,
+          name,
+          category,
+          subcategory,
+          price,
+          rating: 5.0,
+          reviewsCount: 1,
+          primaryImage,
+          secondaryImage: secondaryImage || primaryImage,
+          description,
+          material: material || 'Silk Satin',
+          care: care || 'Dry clean only',
+          fit: 'Regular fit',
+          sizes: ['XS', 'S', 'M', 'L', 'XL'],
+          colors: [{ name: 'Ivory', hex: '#F8F5F0' }],
+          stock,
+          mood: 'CONFIDENT',
+          isDay: true,
+          isNight: true
+        };
+        store.addProduct(newProd);
+        showToast(`Created new product "${name}" in database!`);
+      }
+
+      isAdminProdModalOpen = false;
+      renderApp();
+    });
+  }
+
+  // Admin Product Delete
+  document.querySelectorAll('.btn-del-prod').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-prod-id');
-      const prod = store.products.find((p) => p.id === id);
-      if (prod) {
-        const newPrice = prompt(`Edit Price for "${prod.name}":`, prod.price.toString());
-        const newStock = prompt(`Edit Stock Units for "${prod.name}":`, prod.stock.toString());
-        if (newPrice && newStock) {
-          prod.price = parseInt(newPrice, 10);
-          prod.stock = parseInt(newStock, 10);
-          store.updateProduct(prod);
-          showToast(`Updated "${prod.name}" price and stock.`);
-          renderApp();
-        }
+      if (id && confirm('Are you sure you want to delete this product from database?')) {
+        store.deleteProduct(id);
+        showToast('Product deleted from database.');
+        renderApp();
       }
     });
   });
 
+  // Admin Restock
   document.querySelectorAll('.btn-restock').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-prod-id');
@@ -841,6 +912,7 @@ function attachEventHandlers() {
     });
   });
 
+  // Coupon Creation & Deletion
   const addCouponForm = document.getElementById('add-coupon-form') as HTMLFormElement;
   if (addCouponForm) {
     addCouponForm.addEventListener('submit', (e) => {
@@ -849,7 +921,7 @@ function attachEventHandlers() {
       const discount = parseInt((document.getElementById('new-coupon-discount') as HTMLInputElement).value, 10);
       if (code && discount) {
         store.addCoupon(code, discount);
-        showToast(`Coupon code ${code} created successfully!`);
+        showToast(`Coupon code ${code} created in database!`);
         renderApp();
       }
     });
@@ -866,6 +938,7 @@ function attachEventHandlers() {
     });
   });
 
+  // Order Status Updater
   document.querySelectorAll('.order-status-select').forEach((select) => {
     select.addEventListener('change', (e) => {
       const orderId = select.getAttribute('data-order-id');
