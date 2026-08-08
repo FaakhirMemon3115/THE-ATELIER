@@ -1,6 +1,6 @@
 import { PRODUCTS_DATA } from './products';
 import type { Product } from './products';
-import type { Order, Coupon, User, HeroBannerConfig } from './mockState';
+import type { Order, Coupon, User, HeroBannerConfig } from './types';
 
 const STORAGE_KEYS = {
   PRODUCTS: 'atelier_db_products',
