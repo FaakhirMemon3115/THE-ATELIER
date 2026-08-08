@@ -2,6 +2,16 @@ import { PRODUCTS_DATA } from '../data/products';
 import { renderProductCard } from '../components/ProductCard';
 
 export function renderShopPage(selectedCategory = 'ALL'): string {
+  const totalCount = PRODUCTS_DATA.length;
+  
+  // Calculate dynamic counts for categories & subcategories
+  const clothingCount = PRODUCTS_DATA.filter((p) => p.category === 'Clothing').length;
+  const dressesCount = PRODUCTS_DATA.filter((p) => p.subcategory === 'Dresses').length;
+  const topsCount = PRODUCTS_DATA.filter((p) => p.subcategory === 'Tops' || p.category === 'Clothing' && p.subcategory !== 'Dresses').length;
+  const bagsCount = PRODUCTS_DATA.filter((p) => p.category === 'Bags').length;
+  const footwearCount = PRODUCTS_DATA.filter((p) => p.category === 'Footwear').length;
+  const accessoriesCount = PRODUCTS_DATA.filter((p) => p.category === 'Accessories').length;
+
   const filteredProducts =
     selectedCategory === 'ALL'
       ? PRODUCTS_DATA
@@ -32,12 +42,48 @@ export function renderShopPage(selectedCategory = 'ALL'): string {
             <div class="filter-group">
               <div class="filter-group-title">CATEGORIES</div>
               <ul class="filter-options-list">
-                <li><label class="filter-checkbox-label"><input type="checkbox" checked /> All Products (124)</label></li>
-                <li><label class="filter-checkbox-label"><input type="checkbox" /> Evening Dresses (38)</label></li>
-                <li><label class="filter-checkbox-label"><input type="checkbox" /> Leather Handbags (24)</label></li>
-                <li><label class="filter-checkbox-label"><input type="checkbox" /> Stiletto Heels & Sandals (22)</label></li>
-                <li><label class="filter-checkbox-label"><input type="checkbox" /> Jewelry & Accessories (18)</label></li>
-                <li><label class="filter-checkbox-label"><input type="checkbox" /> Tailored Tops & Blazers (22)</label></li>
+                <li>
+                  <label class="filter-checkbox-label">
+                    <input type="checkbox" data-route="shop" data-cat="ALL" ${selectedCategory === 'ALL' ? 'checked' : ''} /> 
+                    All Products (${totalCount})
+                  </label>
+                </li>
+                <li>
+                  <label class="filter-checkbox-label">
+                    <input type="checkbox" data-route="shop" data-cat="Clothing" ${selectedCategory === 'Clothing' ? 'checked' : ''} /> 
+                    Clothing (${clothingCount})
+                  </label>
+                </li>
+                <li>
+                  <label class="filter-checkbox-label" style="padding-left: 14px; font-size: 0.85rem;">
+                    <input type="checkbox" data-route="shop" data-cat="Dresses" ${selectedCategory === 'Dresses' ? 'checked' : ''} /> 
+                    Dresses & Gowns (${dressesCount})
+                  </label>
+                </li>
+                <li>
+                  <label class="filter-checkbox-label" style="padding-left: 14px; font-size: 0.85rem;">
+                    <input type="checkbox" data-route="shop" data-cat="Tops" ${selectedCategory === 'Tops' ? 'checked' : ''} /> 
+                    Tops, Kurtis & Blazers (${topsCount})
+                  </label>
+                </li>
+                <li>
+                  <label class="filter-checkbox-label">
+                    <input type="checkbox" data-route="shop" data-cat="Bags" ${selectedCategory === 'Bags' ? 'checked' : ''} /> 
+                    Leather Handbags (${bagsCount})
+                  </label>
+                </li>
+                <li>
+                  <label class="filter-checkbox-label">
+                    <input type="checkbox" data-route="shop" data-cat="Footwear" ${selectedCategory === 'Footwear' ? 'checked' : ''} /> 
+                    Footwear & Heels (${footwearCount})
+                  </label>
+                </li>
+                <li>
+                  <label class="filter-checkbox-label">
+                    <input type="checkbox" data-route="shop" data-cat="Accessories" ${selectedCategory === 'Accessories' ? 'checked' : ''} /> 
+                    Jewelry & Accessories (${accessoriesCount})
+                  </label>
+                </li>
               </ul>
             </div>
 
