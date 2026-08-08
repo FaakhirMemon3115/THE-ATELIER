@@ -1,13 +1,305 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>the-atelier</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- SEO -->
+  <title>THE ATELIER — Premium Ladies Fashion | Discover Your Style</title>
+  <meta name="description" content="THE ATELIER — A luxury ladies fashion destination. Discover curated collections of dresses, bags, shoes, and accessories. Free delivery on orders above Rs. 5,000." />
+  <meta name="keywords" content="ladies fashion, luxury dresses, designer bags, women shoes, fashion accessories, online shopping Pakistan" />
+  <link rel="canonical" href="https://theatelier.com/" />
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="THE ATELIER — Premium Ladies Fashion" />
+  <meta property="og:description" content="Discover curated collections of dresses, bags, shoes, and accessories." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://theatelier.com/" />
+  <meta property="og:image" content="/images/hero/hero-model.png" />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  
+  <!-- Preload critical fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <!-- Preload hero image -->
+  <link rel="preload" as="image" href="/images/hero/hero-model.png" fetchpriority="high" />
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "THE ATELIER",
+    "url": "https://theatelier.com",
+    "description": "Premium Ladies Fashion Destination",
+    "foundingDate": "2026"
+  }
+  </script>
+  
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="/src/css/design-system.css" />
+  <link rel="stylesheet" href="/src/css/components.css" />
+  <link rel="stylesheet" href="/src/css/layout.css" />
+  <link rel="stylesheet" href="/src/css/animations.css" />
+  <link rel="stylesheet" href="/src/css/pages/home.css" />
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-content">
+      <div class="loading-logo">THE ATELIER</div>
+      <div class="loading-tagline">EST. 2026</div>
+      <div class="loading-enter" id="loading-enter">ENTER THE ATELIER</div>
+    </div>
+  </div>
+
+  <!-- Announcement Bar -->
+  <div id="announcement-bar" class="announcement-bar">
+    <p>Free Delivery on Orders Above Rs. 5,000 &nbsp;✦&nbsp; New Season 2026 Now Live</p>
+    <button class="announcement-close" id="announcement-close" aria-label="Close announcement">&times;</button>
+  </div>
+
+  <!-- Navigation -->
+  <header id="main-header" class="main-header">
+    <nav class="navbar" id="navbar">
+      <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      
+      <a href="/" class="nav-logo" id="nav-logo">THE ATELIER</a>
+      
+      <div class="nav-links" id="nav-links">
+        <a href="/" class="nav-link active" data-page="home">Home</a>
+        <div class="nav-dropdown">
+          <a href="/new-arrivals" class="nav-link" data-page="new-arrivals">New Arrivals</a>
+        </div>
+        <div class="nav-dropdown" id="clothing-dropdown">
+          <a href="/clothing" class="nav-link has-dropdown" data-page="clothing">Clothing</a>
+          <div class="dropdown-menu mega-menu">
+            <div class="mega-menu-inner">
+              <div class="mega-col">
+                <h4>Clothing</h4>
+                <a href="/shop/dresses">Dresses</a>
+                <a href="/shop/tops">Tops</a>
+                <a href="/shop/shirts">Shirts</a>
+                <a href="/shop/co-ords">Co-ords</a>
+                <a href="/shop/abayas">Abayas</a>
+                <a href="/shop/kurtis">Kurtis</a>
+              </div>
+              <div class="mega-col">
+                <h4>Bottoms</h4>
+                <a href="/shop/trousers">Trousers</a>
+                <a href="/shop/jeans">Jeans</a>
+                <a href="/shop/skirts">Skirts</a>
+              </div>
+              <div class="mega-col">
+                <h4>Collections</h4>
+                <a href="/collections/summer">Summer Collection</a>
+                <a href="/collections/party-wear">Party Wear</a>
+                <a href="/collections/casual">Casual Wear</a>
+                <a href="/collections/office">Office Wear</a>
+                <a href="/collections/luxury">Luxury Collection</a>
+              </div>
+              <div class="mega-col mega-col-image">
+                <div class="mega-image">
+                  <img src="/images/editorial/collection-model.png" alt="New Collection" loading="lazy" />
+                  <span>NEW COLLECTION</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="nav-dropdown">
+          <a href="/shoes" class="nav-link has-dropdown" data-page="shoes">Shoes</a>
+          <div class="dropdown-menu">
+            <a href="/shop/heels">Heels</a>
+            <a href="/shop/flats">Flats</a>
+            <a href="/shop/sneakers">Sneakers</a>
+            <a href="/shop/sandals">Sandals</a>
+          </div>
+        </div>
+        <div class="nav-dropdown">
+          <a href="/bags" class="nav-link has-dropdown" data-page="bags">Bags</a>
+          <div class="dropdown-menu">
+            <a href="/shop/handbags">Handbags</a>
+            <a href="/shop/clutches">Clutches</a>
+            <a href="/shop/totes">Totes</a>
+            <a href="/shop/crossbody">Crossbody</a>
+          </div>
+        </div>
+        <div class="nav-dropdown">
+          <a href="/accessories" class="nav-link has-dropdown" data-page="accessories">Accessories</a>
+          <div class="dropdown-menu">
+            <a href="/shop/jewelry">Jewelry</a>
+            <a href="/shop/watches">Watches</a>
+            <a href="/shop/sunglasses">Sunglasses</a>
+            <a href="/shop/scarves">Scarves</a>
+          </div>
+        </div>
+        <a href="/sale" class="nav-link nav-sale" data-page="sale">Sale</a>
+      </div>
+      
+      <div class="nav-actions">
+        <button class="nav-action" id="search-trigger" aria-label="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+        <a href="/account" class="nav-action" id="account-trigger" aria-label="Account">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </a>
+        <button class="nav-action" id="wishlist-trigger" aria-label="Wishlist">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span class="nav-badge" id="wishlist-count" hidden>0</span>
+        </button>
+        <button class="nav-action" id="cart-trigger" aria-label="Shopping bag">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span class="nav-badge" id="cart-count" hidden>0</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Search Overlay -->
+  <div class="search-overlay" id="search-overlay" aria-hidden="true">
+    <div class="search-overlay-inner">
+      <button class="search-close" id="search-close" aria-label="Close search">&times;</button>
+      <h2 class="search-title">WHAT ARE YOU LOOKING FOR?</h2>
+      <div class="search-input-wrap">
+        <input type="search" class="search-input" id="search-input" placeholder="Type here..." autocomplete="off" />
+        <svg class="search-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+      <div class="search-trending">
+        <h3>TRENDING</h3>
+        <div class="search-tags">
+          <a href="/shop/dresses" class="search-tag">Dresses</a>
+          <a href="/collections/party-wear" class="search-tag">Evening Wear</a>
+          <a href="/shop/handbags" class="search-tag">Bags</a>
+          <a href="/new-arrivals" class="search-tag">New Arrivals</a>
+          <a href="/sale" class="search-tag">Sale</a>
+        </div>
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+    <div class="mobile-menu-inner">
+      <div class="mobile-menu-header">
+        <span class="mobile-menu-title">THE ATELIER</span>
+        <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Close menu">&times;</button>
+      </div>
+      <nav class="mobile-menu-nav">
+        <a href="/" class="mobile-nav-item">01 HOME</a>
+        <a href="/collections" class="mobile-nav-item">02 COLLECTIONS</a>
+        <a href="/new-arrivals" class="mobile-nav-item">03 NEW ARRIVALS</a>
+        <a href="/shop" class="mobile-nav-item">04 SHOP</a>
+        <div class="mobile-nav-accordion">
+          <button class="mobile-nav-item mobile-nav-toggle">05 CLOTHING <span class="mobile-nav-arrow">+</span></button>
+          <div class="mobile-nav-submenu">
+            <a href="/shop/dresses">Dresses</a>
+            <a href="/shop/tops">Tops</a>
+            <a href="/shop/shirts">Shirts</a>
+            <a href="/shop/co-ords">Co-ords</a>
+            <a href="/shop/abayas">Abayas</a>
+            <a href="/shop/kurtis">Kurtis</a>
+            <a href="/shop/trousers">Trousers</a>
+            <a href="/shop/jeans">Jeans</a>
+            <a href="/shop/skirts">Skirts</a>
+          </div>
+        </div>
+        <div class="mobile-nav-accordion">
+          <button class="mobile-nav-item mobile-nav-toggle">06 ACCESSORIES <span class="mobile-nav-arrow">+</span></button>
+          <div class="mobile-nav-submenu">
+            <a href="/shop/jewelry">Jewelry</a>
+            <a href="/shop/watches">Watches</a>
+            <a href="/shop/sunglasses">Sunglasses</a>
+            <a href="/shop/scarves">Scarves</a>
+          </div>
+        </div>
+        <a href="/sale" class="mobile-nav-item mobile-nav-sale">07 SALE</a>
+        <a href="/journal" class="mobile-nav-item">08 JOURNAL</a>
+        <a href="/about" class="mobile-nav-item">09 ABOUT</a>
+      </nav>
+      <div class="mobile-menu-footer">
+        <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://pinterest.com" target="_blank" rel="noopener">Pinterest</a>
+        <a href="/contact">Contact</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Drawer -->
+  <div class="cart-drawer-overlay" id="cart-drawer-overlay"></div>
+  <aside class="cart-drawer" id="cart-drawer" aria-hidden="true">
+    <div class="cart-drawer-header">
+      <h2>YOUR ATELIER BAG</h2>
+      <button class="cart-drawer-close" id="cart-drawer-close" aria-label="Close cart">&times;</button>
+    </div>
+    <div class="cart-drawer-progress">
+      <p class="cart-progress-text" id="cart-progress-text">Add Rs. 5,000 more for complimentary delivery</p>
+      <div class="cart-progress-bar">
+        <div class="cart-progress-fill" id="cart-progress-fill" style="width: 0%"></div>
+      </div>
+    </div>
+    <div class="cart-drawer-items" id="cart-drawer-items">
+      <div class="cart-empty">
+        <p>Your bag is empty</p>
+        <a href="/shop" class="btn btn-primary">CONTINUE SHOPPING</a>
+      </div>
+    </div>
+    <div class="cart-drawer-footer" id="cart-drawer-footer" hidden>
+      <div class="cart-subtotal">
+        <span>SUBTOTAL</span>
+        <span id="cart-subtotal">Rs. 0</span>
+      </div>
+      <a href="/cart" class="btn btn-secondary cart-btn">VIEW BAG</a>
+      <a href="/checkout" class="btn btn-primary cart-btn">CHECKOUT</a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main id="app">
+    <!-- All page content renders here -->
+  </main>
+
+  <!-- Back to Top -->
+  <button class="back-to-top" id="back-to-top" aria-label="Back to top" hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+  </button>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+    <a href="/" class="bottom-nav-item active" data-page="home">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="/shop" class="bottom-nav-item" data-page="shop">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>
+      <span>Shop</span>
+    </a>
+    <button class="bottom-nav-item" id="mobile-search-trigger">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span>Search</span>
+    </button>
+    <a href="/wishlist" class="bottom-nav-item" data-page="wishlist">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span>Wishlist</span>
+    </a>
+    <button class="bottom-nav-item" id="mobile-bag-trigger">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span>Bag</span>
+    </button>
+  </nav>
+
+  <!-- Main JavaScript -->
+  <script type="module" src="/src/js/app.js"></script>
+</body>
 </html>
