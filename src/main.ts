@@ -1,6 +1,7 @@
 import './style.css';
 import { store } from './js/data/mockState';
-import type { Product, Order } from './js/data/mockState';
+import type { Order } from './js/data/mockState';
+import type { Product } from './js/data/products';
 import { renderNavbar } from './js/components/Navbar';
 import { renderCartDrawer } from './js/components/CartDrawer';
 import { renderProductModal } from './js/components/ProductModal';
@@ -8,7 +9,8 @@ import { renderStyleDNAQuizModal } from './js/components/StyleDNAQuiz';
 import { renderSearchOverlay } from './js/components/SearchOverlay';
 import { renderAuthModal, validatePassword } from './js/components/AuthModal';
 import { renderHomePage } from './js/pages/Home';
-import { renderShopPage, FilterState } from './js/pages/ShopPage';
+import { renderShopPage } from './js/pages/ShopPage';
+import type { FilterState } from './js/pages/ShopPage';
 import { renderCheckoutPage } from './js/pages/CheckoutPage';
 import { renderAccountPage } from './js/pages/AccountPage';
 import { renderAdminPage } from './js/pages/AdminPage';
