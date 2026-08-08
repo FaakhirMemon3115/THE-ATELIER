@@ -1,5 +1,5 @@
 import { SHOP_THE_LOOK_DATA, JOURNAL_STORIES } from '../data/collections';
-import { PRODUCTS_DATA, Product } from '../data/products';
+import { PRODUCTS_DATA } from '../data/products';
 import { renderProductCard } from '../components/ProductCard';
 import { store } from '../data/mockState';
 

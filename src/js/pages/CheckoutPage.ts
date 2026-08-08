@@ -1,4 +1,5 @@
-import { store, Order } from '../data/mockState';
+import { store } from '../data/mockState';
+import type { Order } from '../data/mockState';
 
 export function renderCheckoutPage(confirmedOrder: Order | null = null): string {
   if (confirmedOrder) {
