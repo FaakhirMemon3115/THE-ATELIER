@@ -66,7 +66,7 @@ function renderApp() {
 
           <div class="footer-grid">
             <div>
-              <div class="brand-logo" style="margin-bottom: 14px;"><img src="/assets/the-atelier-logo.svg" alt="THE ATELIER" style="height: 44px; width: auto; display: block; filter: invert(1);" /></div>
+              <div class="brand-logo" style="margin-bottom: 14px;"><img src="/assets/the-atelier-logo.svg" alt="THE ATELIER" style="height: 44px; width: auto; display: block;" /></div>
               <p style="font-size: 0.85rem; color: #A0A0A0; max-width: 260px;">
                 Haute couture fashion brand bringing international luxury aesthetics to modern women.
               </p>
