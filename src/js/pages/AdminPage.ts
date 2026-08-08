@@ -4,11 +4,13 @@ export function renderAdminPage(activeTab = 'dashboard'): string {
   const products = store.products;
   const orders = store.orders;
   const coupons = store.coupons;
+  const users = store.registeredUsers;
+  const heroConfig = store.heroBanner;
 
   // Real KPI calculations
   const totalSales = orders.reduce((sum, o) => (o.status !== 'Cancelled' ? sum + o.total : sum), 0);
   const totalOrdersCount = orders.length;
-  const activeCustomersCount = new Set(orders.map((o) => o.customerEmail)).size || (store.currentUser ? 1 : 0);
+  const activeCustomersCount = users.length;
   const totalProductsCount = products.length;
 
   const lowStockItems = store.getLowStockProducts();
@@ -53,6 +55,12 @@ export function renderAdminPage(activeTab = 'dashboard'): string {
               <button class="admin-nav-item ${activeTab === 'dashboard' ? 'active' : ''}" data-admin-tab="dashboard">
                 <i class="fa-solid fa-chart-pie"></i> Analytics & Overview
               </button>
+              <button class="admin-nav-item ${activeTab === 'users' ? 'active' : ''}" data-admin-tab="users">
+                <i class="fa-solid fa-users"></i> Users & Activity (${users.length})
+              </button>
+              <button class="admin-nav-item ${activeTab === 'hero' ? 'active' : ''}" data-admin-tab="hero">
+                <i class="fa-solid fa-image"></i> Hero Bar Customizer
+              </button>
               <button class="admin-nav-item ${activeTab === 'products' ? 'active' : ''}" data-admin-tab="products">
                 <i class="fa-solid fa-boxes-stacked"></i> Products Catalog (${products.length})
               </button>
@@ -73,6 +81,10 @@ export function renderAdminPage(activeTab = 'dashboard'): string {
             ${
               activeTab === 'dashboard'
                 ? renderAnalyticsDashboard(totalSales, totalOrdersCount, activeCustomersCount, totalProductsCount, topSelling, lowStockItems)
+                : activeTab === 'users'
+                ? renderUsersTab(users)
+                : activeTab === 'hero'
+                ? renderHeroCustomizerTab(heroConfig)
                 : activeTab === 'products'
                 ? renderProductsTab(products)
                 : activeTab === 'orders'
@@ -111,7 +123,7 @@ function renderAnalyticsDashboard(
         <div class="kpi-sub">Lifetime client checkouts</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-title">ACTIVE CLIENTS</div>
+        <div class="kpi-title">REGISTERED CLIENTS</div>
         <div class="kpi-value">${customersCount}</div>
         <div class="kpi-sub">Registered buyers</div>
       </div>
@@ -206,6 +218,104 @@ function renderAnalyticsDashboard(
         }
       </div>
 
+    </div>
+  `;
+}
+
+function renderUsersTab(users: any[]): string {
+  return `
+    <h3 class="heading-3 font-serif" style="margin-bottom: 20px;">User Accounts & Activity Timestamps</h3>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>USER PROFILE</th>
+          <th>ROLE</th>
+          <th>REGISTERED AT</th>
+          <th>LAST LOGIN TIME</th>
+          <th>STATUS</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${users
+          .map(
+            (u) => `
+          <tr>
+            <td>
+              <div class="flex items-center gap-sm">
+                <img src="${u.avatar || '/images/hero_model.png'}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 50%; border: 1px solid var(--color-gold);" />
+                <div>
+                  <div style="font-weight: 600;">${u.name}</div>
+                  <div style="font-size: 0.75rem; color: var(--color-muted);">${u.email}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span style="font-size: 0.75rem; font-weight: 700; color: ${u.role === 'ADMIN' ? 'var(--color-gold)' : 'var(--color-black)'};">
+                ${u.role}
+              </span>
+            </td>
+            <td style="font-size: 0.8rem;">${u.registeredAt || 'Jan 10, 2026'}</td>
+            <td style="font-size: 0.8rem; font-weight: 600;">${u.lastLoginAt || 'Recent'}</td>
+            <td>
+              ${
+                u.isBanned
+                  ? `<span style="background: #FDEDEC; color: #721C24; padding: 2px 8px; border-radius: 2px; font-weight: 600; font-size: 0.75rem;"><i class="fa-solid fa-user-slash"></i> BANNED</span>`
+                  : `<span style="background: #E8F8F5; color: #117864; padding: 2px 8px; border-radius: 2px; font-weight: 600; font-size: 0.75rem;"><i class="fa-solid fa-user-check"></i> ACTIVE</span>`
+              }
+            </td>
+            <td>
+              ${
+                u.role !== 'ADMIN'
+                  ? `
+                ${
+                  u.isBanned
+                    ? `<button class="btn-unban-user" data-user-id="${u.id}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid #117864; color: #117864; background: none; cursor: pointer; margin-right: 4px;">Unban</button>`
+                    : `<button class="btn-ban-user" data-user-id="${u.id}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid #F5C6CB; color: var(--color-sale-red); background: none; cursor: pointer; margin-right: 4px;"><i class="fa-solid fa-ban"></i> Ban</button>`
+                }
+                <button class="btn-remove-user" data-user-id="${u.id}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-border); color: var(--color-muted); background: none; cursor: pointer;">
+                  <i class="fa-solid fa-trash"></i> Remove
+                </button>
+              `
+                  : `<span style="font-size: 0.75rem; color: var(--color-muted);">Protected</span>`
+              }
+            </td>
+          </tr>
+        `
+          )
+          .join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderHeroCustomizerTab(heroConfig: any): string {
+  return `
+    <h3 class="heading-3 font-serif" style="margin-bottom: 20px;">Hero Bar Customizer & Banner Management</h3>
+    <div style="background: #FFF; border: 1px solid var(--color-border); padding: 24px; border-radius: var(--radius-sm);">
+      <form id="hero-customizer-form">
+        <div style="margin-bottom: 16px;">
+          <label class="form-label">Hero Title Headline</label>
+          <input type="text" id="hero-title-input" value="${heroConfig.title}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required />
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label class="form-label">Subtitle Badge Text</label>
+          <input type="text" id="hero-subtitle-input" value="${heroConfig.subtitle}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required />
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label class="form-label">Hero Tagline Description</label>
+          <textarea id="hero-tagline-input" class="newsletter-input" style="width: 100%; height: 80px; border: 1px solid var(--color-border); color: var(--color-black);" required>${heroConfig.tagline}</textarea>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+          <label class="form-label">Hero Banner Model Image URL</label>
+          <input type="text" id="hero-image-input" value="${heroConfig.imageUrl}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required />
+        </div>
+
+        <button type="submit" class="btn btn-gold" style="padding: 10px 24px;">SAVE HERO BANNER CHANGES</button>
+      </form>
     </div>
   `;
 }

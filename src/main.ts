@@ -70,7 +70,6 @@ function renderApp() {
   } else if (store.activeRoute === 'account') {
     mainContent = renderAccountPage(accountTab);
   } else if (store.activeRoute === 'admin') {
-    // Only render admin page if authenticated as ADMIN
     if (store.currentUser?.role === 'ADMIN') {
       mainContent = renderAdminPage(adminTab);
     } else {
@@ -87,7 +86,7 @@ function renderApp() {
     ${renderNavbar()}
     <main class="fade-in">${mainContent}</main>
 
-    <!-- Footer (omitted on checkout for distraction-free flow) -->
+    <!-- Footer -->
     ${
       store.activeRoute !== 'checkout'
         ? `
@@ -159,7 +158,7 @@ function renderApp() {
         : ''
     }
 
-    <!-- Slide-over Cart Drawer -->
+    <!-- Cart Drawer -->
     ${renderCartDrawer()}
 
     <!-- Modals -->
@@ -219,6 +218,17 @@ function attachEventHandlers() {
     });
   });
 
+  // Account Menu Tabs
+  document.querySelectorAll('[data-acc-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tab = btn.getAttribute('data-acc-tab');
+      if (tab) {
+        accountTab = tab;
+        renderApp();
+      }
+    });
+  });
+
   // Auth Button (Navbar)
   const openAuthBtn = document.getElementById('open-auth-btn');
   if (openAuthBtn) {
@@ -272,6 +282,43 @@ function attachEventHandlers() {
     });
   }
 
+  // Real-Time Password Requirements Checklist Listener (Turns BLACK with checkmark as criteria met!)
+  const regPasswordInput = document.getElementById('reg-password') as HTMLInputElement;
+  if (regPasswordInput) {
+    regPasswordInput.addEventListener('input', () => {
+      const pass = regPasswordInput.value;
+
+      const updateRule = (ruleId: string, isMet: boolean) => {
+        const el = document.getElementById(ruleId);
+        if (el) {
+          if (isMet) {
+            el.style.color = 'var(--color-black)';
+            el.style.fontWeight = '700';
+            const icon = el.querySelector('i');
+            if (icon) {
+              icon.className = 'fa-solid fa-circle-check';
+              icon.style.color = 'var(--color-black)';
+            }
+          } else {
+            el.style.color = '#999';
+            el.style.fontWeight = '400';
+            const icon = el.querySelector('i');
+            if (icon) {
+              icon.className = 'fa-regular fa-circle';
+              icon.style.color = '#999';
+            }
+          }
+        }
+      };
+
+      updateRule('rule-len', pass.length >= 8);
+      updateRule('rule-upper', /[A-Z]/.test(pass));
+      updateRule('rule-lower', /[a-z]/.test(pass));
+      updateRule('rule-num', /[0-9]/.test(pass));
+      updateRule('rule-sym', /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pass));
+    });
+  }
+
   // Login Form Submission
   const loginForm = document.getElementById('auth-login-form') as HTMLFormElement;
   if (loginForm) {
@@ -289,17 +336,23 @@ function attachEventHandlers() {
         return;
       }
 
-      // Regular User Login
-      if (email && password) {
-        store.login(email, 'USER', email.split('@')[0]);
-        isAuthModalOpen = false;
-        showToast(`Welcome back, ${store.currentUser?.name}!`);
-        renderApp();
+      const res = store.login(email, 'USER', email.split('@')[0]);
+      if (!res.success) {
+        const alertBox = document.getElementById('auth-error-alert');
+        if (alertBox) {
+          alertBox.style.display = 'block';
+          alertBox.textContent = res.message;
+        }
+        return;
       }
+
+      isAuthModalOpen = false;
+      showToast(res.message);
+      renderApp();
     });
   }
 
-  // Registration Form Submission (With Password Validation)
+  // Registration Form Submission (With Password Validation & Auto-Login)
   const registerForm = document.getElementById('auth-register-form') as HTMLFormElement;
   if (registerForm) {
     registerForm.addEventListener('submit', (e) => {
@@ -319,10 +372,60 @@ function attachEventHandlers() {
         return;
       }
 
-      store.login(email, 'USER', name);
+      const res = store.register(name, email, password);
+      if (!res.success) {
+        if (alertBox) {
+          alertBox.style.display = 'block';
+          alertBox.textContent = res.message;
+        }
+        return;
+      }
+
       isAuthModalOpen = false;
-      showToast(`Account created successfully. Welcome ${name}!`);
+      showToast(res.message);
       renderApp();
+    });
+  }
+
+  // Profile Edit Form Submission
+  const editProfileForm = document.getElementById('edit-profile-form') as HTMLFormElement;
+  if (editProfileForm) {
+    editProfileForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newName = (document.getElementById('profile-edit-name') as HTMLInputElement).value.trim();
+      const newAvatar = (document.getElementById('profile-edit-avatar') as HTMLInputElement).value.trim();
+
+      const res = store.updateUserProfile(newName, newAvatar);
+      showToast(res.message);
+      renderApp();
+    });
+  }
+
+  // Password Change Form Submission
+  const changePassForm = document.getElementById('change-password-form') as HTMLFormElement;
+  if (changePassForm) {
+    changePassForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const oldPass = (document.getElementById('pass-old') as HTMLInputElement).value;
+      const newPass = (document.getElementById('pass-new') as HTMLInputElement).value;
+      const confirmPass = (document.getElementById('pass-confirm') as HTMLInputElement).value;
+
+      if (newPass !== confirmPass) {
+        showToast('New passwords do not match.', 'fa-triangle-exclamation');
+        return;
+      }
+
+      const validation = validatePassword(newPass);
+      if (!validation.isValid) {
+        showToast(validation.errors[0], 'fa-triangle-exclamation');
+        return;
+      }
+
+      const res = store.changeUserPassword(oldPass, newPass);
+      showToast(res.message, res.success ? 'fa-circle-check' : 'fa-triangle-exclamation');
+      if (res.success) {
+        changePassForm.reset();
+      }
     });
   }
 
@@ -460,7 +563,7 @@ function attachEventHandlers() {
     });
   }
 
-  // Shop Page Filters (Interactive Real-Time binding)
+  // Shop Page Filters
   document.querySelectorAll('[data-filter-cat]').forEach((input) => {
     input.addEventListener('change', (e) => {
       const cat = (e.target as HTMLElement).getAttribute('data-filter-cat');
@@ -529,7 +632,7 @@ function attachEventHandlers() {
     });
   }
 
-  // Coupon Application (Single-Use Rule)
+  // Coupon Application
   const couponForm = document.getElementById('coupon-form') as HTMLFormElement;
   if (couponForm) {
     couponForm.addEventListener('submit', (e) => {
@@ -607,6 +710,57 @@ function attachEventHandlers() {
     });
   });
 
+  // Admin User Ban / Unban / Remove Handlers
+  document.querySelectorAll('.btn-ban-user').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-user-id');
+      if (id && confirm('Ban this user from logging in and accessing the platform?')) {
+        store.banUser(id);
+        showToast('User has been banned.', 'fa-user-slash');
+        renderApp();
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-unban-user').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-user-id');
+      if (id) {
+        store.unbanUser(id);
+        showToast('User access restored.');
+        renderApp();
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-remove-user').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-user-id');
+      if (id && confirm('Permanently remove this user record?')) {
+        store.removeUser(id);
+        showToast('User removed.');
+        renderApp();
+      }
+    });
+  });
+
+  // Hero Bar Customizer Form
+  const heroForm = document.getElementById('hero-customizer-form') as HTMLFormElement;
+  if (heroForm) {
+    heroForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = (document.getElementById('hero-title-input') as HTMLInputElement).value;
+      const subtitle = (document.getElementById('hero-subtitle-input') as HTMLInputElement).value;
+      const tagline = (document.getElementById('hero-tagline-input') as HTMLInputElement).value;
+      const imageUrl = (document.getElementById('hero-image-input') as HTMLInputElement).value;
+
+      store.updateHeroBanner({ title, subtitle, tagline, imageUrl });
+      showToast('Hero Bar Banner updated live on Homepage!');
+      renderApp();
+    });
+  }
+
+  // Admin Product CRUD Handlers
   const adminAddProdBtn = document.getElementById('admin-add-product-btn');
   if (adminAddProdBtn) {
     adminAddProdBtn.addEventListener('click', () => {
