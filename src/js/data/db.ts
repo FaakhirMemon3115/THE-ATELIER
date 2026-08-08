@@ -49,20 +49,9 @@ class AtelierDatabase {
             role: 'ADMIN',
             avatar: '/images/hero_model.png',
             registeredAt: 'Jan 01, 2026 10:00 AM',
-            lastLoginAt: new Date().toLocaleString(),
+            lastLoginAt: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
             isBanned: false,
             password: 'atif@access.com'
-          },
-          {
-            id: 'usr-001',
-            email: 'eleanor@vance.com',
-            name: 'Eleanor Vance',
-            role: 'USER',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-            registeredAt: 'Feb 12, 2026 02:30 PM',
-            lastLoginAt: 'Feb 14, 2026 09:15 AM',
-            isBanned: false,
-            password: 'Password123!'
           }
         ];
         this.saveUsers();

@@ -76,8 +76,8 @@ export function renderNavbar(): string {
           `
           }
 
-          <!-- Mobile Hamburger -->
-          <button class="header-action-btn mobile-toggle" id="mobile-menu-btn">
+          <!-- Mobile Hamburger (hidden on desktop via CSS) -->
+          <button class="header-action-btn nav-hamburger" id="mobile-menu-btn" aria-label="Open navigation menu">
             <i class="fa-solid fa-bars"></i>
           </button>
         </div>

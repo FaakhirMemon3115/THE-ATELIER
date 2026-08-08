@@ -531,7 +531,10 @@ function renderStockAlertsTab(lowStock: any[]): string {
                 <td>
                   <div class="flex items-center gap-sm">
                     <img src="${p.primaryImage}" style="width: 36px; height: 48px; object-fit: cover;" />
-                    <span style="font-weight: 600;">${p.name}</span>
+                    <div>
+                      <div style="font-weight: 600;">${p.name}</div>
+                      <div style="font-size: 0.72rem; color: var(--color-muted);">${p.subcategory}</div>
+                    </div>
                   </div>
                 </td>
                 <td style="font-family: monospace; font-size: 0.8rem;">${p.sku}</td>
@@ -545,9 +548,20 @@ function renderStockAlertsTab(lowStock: any[]): string {
                   }
                 </td>
                 <td>
-                  <button class="btn-restock" data-prod-id="${p.id}" style="padding: 4px 10px; font-size: 0.75rem; background: var(--color-gold); color: #FFF; border: none; cursor: pointer; border-radius: 2px;">
-                    + Add 20 Units
-                  </button>
+                  <form class="restock-form" data-prod-id="${p.id}" style="display: flex; gap: 6px; align-items: center;">
+                    <input
+                      type="number"
+                      class="restock-qty-input"
+                      min="1"
+                      max="999"
+                      placeholder="Qty"
+                      value="20"
+                      style="width: 64px; padding: 4px 8px; font-size: 0.8rem; border: 1px solid var(--color-border); border-radius: 2px; text-align: center;"
+                    />
+                    <button type="submit" style="padding: 4px 10px; font-size: 0.75rem; background: var(--color-gold); color: #FFF; border: none; cursor: pointer; border-radius: 2px; white-space: nowrap;">
+                      <i class="fa-solid fa-plus"></i> Add Stock
+                    </button>
+                  </form>
                 </td>
               </tr>
             `
