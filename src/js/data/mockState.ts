@@ -1,5 +1,8 @@
-import { PRODUCTS_DATA } from './products';
+import { db } from './db';
 import type { Product } from './products';
+import type { Order, Coupon, User, HeroBannerConfig } from './db';
+
+export type { Product, Order, Coupon, User, HeroBannerConfig };
 
 export interface CartItem {
   id: string;
@@ -9,101 +12,9 @@ export interface CartItem {
   selectedColor: string;
 }
 
-export interface OrderItem {
-  productId: string;
-  productName: string;
-  price: number;
-  quantity: number;
-  selectedSize: string;
-  selectedColor: string;
-  image: string;
-}
-
-export interface Order {
-  id: string;
-  date: string;
-  customerName: string;
-  customerEmail: string;
-  items: OrderItem[];
-  subtotal: number;
-  discount: number;
-  shipping: number;
-  total: number;
-  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
-  paymentMethod: string;
-  shippingAddress: string;
-  trackingNumber: string;
-}
-
-export interface Coupon {
-  code: string;
-  discountPercent: number;
-  isUsed: boolean;
-  usedByEmail?: string;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'USER' | 'ADMIN';
-  avatar?: string;
-  registeredAt: string;
-  lastLoginAt: string;
-  isBanned?: boolean;
-  password?: string;
-}
-
-export interface HeroBannerConfig {
-  title: string;
-  subtitle: string;
-  tagline: string;
-  imageUrl: string;
-}
-
 class Store {
-  public products: Product[] = [...PRODUCTS_DATA];
   public cart: CartItem[] = [];
   public wishlist: string[] = [];
-  public orders: Order[] = [];
-  public coupons: Coupon[] = [
-    { code: 'ATELIER10', discountPercent: 10, isUsed: false },
-    { code: 'LUXE20', discountPercent: 20, isUsed: false },
-    { code: 'SPRING500', discountPercent: 15, isUsed: false }
-  ];
-
-  public registeredUsers: User[] = [
-    {
-      id: 'usr-admin',
-      email: 'atif@admin.com',
-      name: 'Atelier Administrator',
-      role: 'ADMIN',
-      avatar: '/images/hero_model.png',
-      registeredAt: 'Jan 01, 2026 10:00 AM',
-      lastLoginAt: new Date().toLocaleString(),
-      isBanned: false,
-      password: 'atif@access.com'
-    },
-    {
-      id: 'usr-001',
-      email: 'eleanor@vance.com',
-      name: 'Eleanor Vance',
-      role: 'USER',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-      registeredAt: 'Feb 12, 2026 02:30 PM',
-      lastLoginAt: 'Feb 14, 2026 09:15 AM',
-      isBanned: false,
-      password: 'Password123!'
-    }
-  ];
-
-  public heroBanner: HeroBannerConfig = {
-    title: 'THE NEW ERA SS26',
-    subtitle: 'HAUTE COUTURE COLLECTION',
-    tagline: 'Sculpted silhouettes, liquid silk gowns, and artisan leather craft.',
-    imageUrl: '/images/hero_model.png'
-  };
-
   public activeRoute: 'home' | 'shop' | 'checkout' | 'account' | 'admin' = 'home';
   public selectedProductForModal: Product | null = null;
   public currentUser: User | null = null;
@@ -114,53 +25,33 @@ class Store {
   private listeners: (() => void)[] = [];
 
   constructor() {
-    this.loadFromStorage();
+    this.loadSessionFromStorage();
   }
 
-  private loadFromStorage() {
+  private loadSessionFromStorage() {
     try {
-      const savedUser = localStorage.getItem('atelier_user');
+      const savedUser = localStorage.getItem('atelier_session_user');
       if (savedUser) this.currentUser = JSON.parse(savedUser);
-
-      const savedUsers = localStorage.getItem('atelier_registered_users');
-      if (savedUsers) this.registeredUsers = JSON.parse(savedUsers);
-
-      const savedHero = localStorage.getItem('atelier_hero_config');
-      if (savedHero) this.heroBanner = JSON.parse(savedHero);
 
       const savedCart = localStorage.getItem('atelier_cart');
       if (savedCart) this.cart = JSON.parse(savedCart);
 
       const savedWishlist = localStorage.getItem('atelier_wishlist');
       if (savedWishlist) this.wishlist = JSON.parse(savedWishlist);
-
-      const savedOrders = localStorage.getItem('atelier_orders');
-      if (savedOrders) this.orders = JSON.parse(savedOrders);
-
-      const savedCoupons = localStorage.getItem('atelier_coupons');
-      if (savedCoupons) this.coupons = JSON.parse(savedCoupons);
-
-      const savedProducts = localStorage.getItem('atelier_products');
-      if (savedProducts) this.products = JSON.parse(savedProducts);
     } catch (e) {
-      console.warn('LocalStorage error:', e);
+      console.warn('Session load error:', e);
     }
   }
 
-  private saveToStorage() {
+  private saveSessionToStorage() {
     try {
-      if (this.currentUser) localStorage.setItem('atelier_user', JSON.stringify(this.currentUser));
-      else localStorage.removeItem('atelier_user');
+      if (this.currentUser) localStorage.setItem('atelier_session_user', JSON.stringify(this.currentUser));
+      else localStorage.removeItem('atelier_session_user');
 
-      localStorage.setItem('atelier_registered_users', JSON.stringify(this.registeredUsers));
-      localStorage.setItem('atelier_hero_config', JSON.stringify(this.heroBanner));
       localStorage.setItem('atelier_cart', JSON.stringify(this.cart));
       localStorage.setItem('atelier_wishlist', JSON.stringify(this.wishlist));
-      localStorage.setItem('atelier_orders', JSON.stringify(this.orders));
-      localStorage.setItem('atelier_coupons', JSON.stringify(this.coupons));
-      localStorage.setItem('atelier_products', JSON.stringify(this.products));
     } catch (e) {
-      console.warn('LocalStorage save error:', e);
+      console.warn('Session save error:', e);
     }
   }
 
@@ -168,11 +59,33 @@ class Store {
     this.listeners.push(listener);
   }
 
-  private notify() {
-    this.saveToStorage();
+  public notify() {
+    this.saveSessionToStorage();
     this.listeners.forEach((fn) => fn());
   }
 
+  // --- Reactive Getters (from db) ---
+  public get products(): Product[] {
+    return db.getProducts();
+  }
+
+  public get registeredUsers(): User[] {
+    return db.getUsers();
+  }
+
+  public get orders(): Order[] {
+    return db.getOrders();
+  }
+
+  public get coupons(): Coupon[] {
+    return db.getCoupons();
+  }
+
+  public get heroBanner(): HeroBannerConfig {
+    return db.getHero();
+  }
+
+  // --- Router ---
   public navigateTo(route: 'home' | 'shop' | 'checkout' | 'account' | 'admin') {
     this.activeRoute = route;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -189,9 +102,10 @@ class Store {
     this.notify();
   }
 
-  // --- Auth & User Management ---
+  // --- Auth & User Database Sync ---
   public login(email: string, role: 'USER' | 'ADMIN' = 'USER', name = 'Valued Client'): { success: boolean; message: string } {
-    const existing = this.registeredUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const users = db.getUsers();
+    const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 
     if (existing?.isBanned) {
       return { success: false, message: 'This account has been banned by Administrator.' };
@@ -201,6 +115,7 @@ class Store {
 
     if (existing) {
       existing.lastLoginAt = loginTime;
+      db.updateUser(existing);
       this.currentUser = { ...existing };
     } else {
       const newUser: User = {
@@ -213,7 +128,7 @@ class Store {
         lastLoginAt: loginTime,
         isBanned: false
       };
-      this.registeredUsers.unshift(newUser);
+      db.addUser(newUser);
       this.currentUser = { ...newUser };
     }
 
@@ -222,7 +137,8 @@ class Store {
   }
 
   public register(name: string, email: string, password: string): { success: boolean; message: string } {
-    const existing = this.registeredUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const users = db.getUsers();
+    const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (existing) {
       return { success: false, message: 'An account with this email address already exists.' };
     }
@@ -240,7 +156,7 @@ class Store {
       password
     };
 
-    this.registeredUsers.unshift(newUser);
+    db.addUser(newUser);
     this.currentUser = { ...newUser };
     this.notify();
     return { success: true, message: `Account created successfully. Welcome ${name}!` };
@@ -260,10 +176,11 @@ class Store {
     this.currentUser.name = name;
     if (avatarUrl) this.currentUser.avatar = avatarUrl;
 
-    const idx = this.registeredUsers.findIndex((u) => u.id === this.currentUser?.id);
-    if (idx !== -1) {
-      this.registeredUsers[idx].name = name;
-      if (avatarUrl) this.registeredUsers[idx].avatar = avatarUrl;
+    const user = db.getUsers().find((u) => u.id === this.currentUser?.id);
+    if (user) {
+      user.name = name;
+      if (avatarUrl) user.avatar = avatarUrl;
+      db.updateUser(user);
     }
 
     this.notify();
@@ -273,12 +190,13 @@ class Store {
   public changeUserPassword(oldPass: string, newPass: string): { success: boolean; message: string } {
     if (!this.currentUser) return { success: false, message: 'No active session.' };
 
-    const idx = this.registeredUsers.findIndex((u) => u.id === this.currentUser?.id);
-    if (idx !== -1) {
-      if (this.registeredUsers[idx].password && this.registeredUsers[idx].password !== oldPass) {
+    const user = db.getUsers().find((u) => u.id === this.currentUser?.id);
+    if (user) {
+      if (user.password && user.password !== oldPass) {
         return { success: false, message: 'Current password is incorrect.' };
       }
-      this.registeredUsers[idx].password = newPass;
+      user.password = newPass;
+      db.updateUser(user);
       this.currentUser.password = newPass;
       this.notify();
       return { success: true, message: 'Password updated successfully!' };
@@ -287,33 +205,37 @@ class Store {
   }
 
   public banUser(userId: string) {
-    const user = this.registeredUsers.find((u) => u.id === userId);
+    const user = db.getUsers().find((u) => u.id === userId);
     if (user && user.role !== 'ADMIN') {
       user.isBanned = true;
+      db.updateUser(user);
       if (this.currentUser?.id === userId) this.logout();
       else this.notify();
     }
   }
 
   public unbanUser(userId: string) {
-    const user = this.registeredUsers.find((u) => u.id === userId);
+    const user = db.getUsers().find((u) => u.id === userId);
     if (user) {
       user.isBanned = false;
+      db.updateUser(user);
       this.notify();
     }
   }
 
   public removeUser(userId: string) {
-    const user = this.registeredUsers.find((u) => u.id === userId);
+    const user = db.getUsers().find((u) => u.id === userId);
     if (user && user.role !== 'ADMIN') {
-      this.registeredUsers = this.registeredUsers.filter((u) => u.id !== userId);
+      db.deleteUser(userId);
       if (this.currentUser?.id === userId) this.logout();
       else this.notify();
     }
   }
 
   public updateHeroBanner(config: Partial<HeroBannerConfig>) {
-    this.heroBanner = { ...this.heroBanner, ...config };
+    const current = db.getHero();
+    const updated = { ...current, ...config };
+    db.updateHero(updated);
     this.notify();
   }
 
@@ -378,7 +300,7 @@ class Store {
   // --- Coupons ---
   public applyCoupon(code: string): { success: boolean; message: string } {
     const cleanCode = code.trim().toUpperCase();
-    const coupon = this.coupons.find((c) => c.code === cleanCode);
+    const coupon = db.getCoupons().find((c) => c.code === cleanCode);
 
     if (!coupon) {
       return { success: false, message: 'Invalid coupon code.' };
@@ -399,13 +321,13 @@ class Store {
 
   public addCoupon(code: string, discountPercent: number) {
     const cleanCode = code.trim().toUpperCase();
-    if (this.coupons.some((c) => c.code === cleanCode)) return;
-    this.coupons.push({ code: cleanCode, discountPercent, isUsed: false });
+    if (db.getCoupons().some((c) => c.code === cleanCode)) return;
+    db.addCoupon({ code: cleanCode, discountPercent, isUsed: false });
     this.notify();
   }
 
   public deleteCoupon(code: string) {
-    this.coupons = this.coupons.filter((c) => c.code !== code);
+    db.deleteCoupon(code);
     if (this.appliedCoupon?.code === code) this.appliedCoupon = null;
     this.notify();
   }
@@ -424,51 +346,47 @@ class Store {
     };
 
     if (this.appliedCoupon) {
-      const c = this.coupons.find((cp) => cp.code === this.appliedCoupon?.code);
+      const c = db.getCoupons().find((cp) => cp.code === this.appliedCoupon?.code);
       if (c) {
         c.isUsed = true;
         c.usedByEmail = this.currentUser?.email;
+        db.updateCoupon(c);
       }
       this.appliedCoupon = null;
     }
 
     newOrder.items.forEach((item) => {
-      const prod = this.products.find((p) => p.id === item.productId);
+      const prod = db.getProductById(item.productId);
       if (prod) {
         prod.stock = Math.max(0, prod.stock - item.quantity);
+        db.updateProduct(prod);
       }
     });
 
-    this.orders.unshift(newOrder);
+    db.addOrder(newOrder);
     this.cart = [];
     this.notify();
     return newOrder;
   }
 
   public updateOrderStatus(orderId: string, status: Order['status']) {
-    const order = this.orders.find((o) => o.id === orderId);
-    if (order) {
-      order.status = status;
-      this.notify();
-    }
+    db.updateOrderStatus(orderId, status);
+    this.notify();
   }
 
   // --- Product CRUD (Admin) ---
   public addProduct(product: Product) {
-    this.products.unshift(product);
+    db.addProduct(product);
     this.notify();
   }
 
   public updateProduct(updatedProduct: Product) {
-    const index = this.products.findIndex((p) => p.id === updatedProduct.id);
-    if (index !== -1) {
-      this.products[index] = updatedProduct;
-      this.notify();
-    }
+    db.updateProduct(updatedProduct);
+    this.notify();
   }
 
   public deleteProduct(productId: string) {
-    this.products = this.products.filter((p) => p.id !== productId);
+    db.deleteProduct(productId);
     this.notify();
   }
 
@@ -495,11 +413,11 @@ class Store {
 
   public getUserOrders(): Order[] {
     if (!this.currentUser) return [];
-    return this.orders.filter((o) => o.customerEmail.toLowerCase() === this.currentUser?.email.toLowerCase());
+    return db.getOrders().filter((o) => o.customerEmail.toLowerCase() === this.currentUser?.email.toLowerCase());
   }
 
   public getLowStockProducts(): Product[] {
-    return this.products.filter((p) => p.stock < 10);
+    return db.getProducts().filter((p) => p.stock < 10);
   }
 }
 
