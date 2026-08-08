@@ -43,9 +43,22 @@ export interface Coupon {
 }
 
 export interface User {
+  id: string;
   email: string;
   name: string;
   role: 'USER' | 'ADMIN';
+  avatar?: string;
+  registeredAt: string;
+  lastLoginAt: string;
+  isBanned?: boolean;
+  password?: string;
+}
+
+export interface HeroBannerConfig {
+  title: string;
+  subtitle: string;
+  tagline: string;
+  imageUrl: string;
 }
 
 class Store {
@@ -59,22 +72,44 @@ class Store {
     { code: 'SPRING500', discountPercent: 15, isUsed: false }
   ];
 
+  public registeredUsers: User[] = [
+    {
+      id: 'usr-admin',
+      email: 'atif@admin.com',
+      name: 'Atelier Administrator',
+      role: 'ADMIN',
+      avatar: '/images/hero_model.png',
+      registeredAt: 'Jan 01, 2026 10:00 AM',
+      lastLoginAt: new Date().toLocaleString(),
+      isBanned: false,
+      password: 'atif@access.com'
+    },
+    {
+      id: 'usr-001',
+      email: 'eleanor@vance.com',
+      name: 'Eleanor Vance',
+      role: 'USER',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      registeredAt: 'Feb 12, 2026 02:30 PM',
+      lastLoginAt: 'Feb 14, 2026 09:15 AM',
+      isBanned: false,
+      password: 'Password123!'
+    }
+  ];
+
+  public heroBanner: HeroBannerConfig = {
+    title: 'THE NEW ERA SS26',
+    subtitle: 'HAUTE COUTURE COLLECTION',
+    tagline: 'Sculpted silhouettes, liquid silk gowns, and artisan leather craft.',
+    imageUrl: '/images/hero_model.png'
+  };
+
   public activeRoute: 'home' | 'shop' | 'checkout' | 'account' | 'admin' = 'home';
   public selectedProductForModal: Product | null = null;
   public currentUser: User | null = null;
   public appliedCoupon: Coupon | null = null;
   public activeMood: 'ALL' | 'CONFIDENT' | 'ROMANTIC' | 'MINIMAL' | 'BOLD' = 'ALL';
-  public dayNightTime: number = 14; // 14:00 (2 PM)
-
-  public setMood(mood: 'ALL' | 'CONFIDENT' | 'ROMANTIC' | 'MINIMAL' | 'BOLD') {
-    this.activeMood = mood;
-    this.notify();
-  }
-
-  public setDayNightTime(time: number) {
-    this.dayNightTime = time;
-    this.notify();
-  }
+  public dayNightTime: number = 14;
 
   private listeners: (() => void)[] = [];
 
@@ -86,6 +121,12 @@ class Store {
     try {
       const savedUser = localStorage.getItem('atelier_user');
       if (savedUser) this.currentUser = JSON.parse(savedUser);
+
+      const savedUsers = localStorage.getItem('atelier_registered_users');
+      if (savedUsers) this.registeredUsers = JSON.parse(savedUsers);
+
+      const savedHero = localStorage.getItem('atelier_hero_config');
+      if (savedHero) this.heroBanner = JSON.parse(savedHero);
 
       const savedCart = localStorage.getItem('atelier_cart');
       if (savedCart) this.cart = JSON.parse(savedCart);
@@ -111,6 +152,8 @@ class Store {
       if (this.currentUser) localStorage.setItem('atelier_user', JSON.stringify(this.currentUser));
       else localStorage.removeItem('atelier_user');
 
+      localStorage.setItem('atelier_registered_users', JSON.stringify(this.registeredUsers));
+      localStorage.setItem('atelier_hero_config', JSON.stringify(this.heroBanner));
       localStorage.setItem('atelier_cart', JSON.stringify(this.cart));
       localStorage.setItem('atelier_wishlist', JSON.stringify(this.wishlist));
       localStorage.setItem('atelier_orders', JSON.stringify(this.orders));
@@ -136,10 +179,71 @@ class Store {
     this.notify();
   }
 
-  // --- Auth Methods ---
-  public login(email: string, role: 'USER' | 'ADMIN' = 'USER', name = 'Valued Client') {
-    this.currentUser = { email, role, name };
+  public setMood(mood: 'ALL' | 'CONFIDENT' | 'ROMANTIC' | 'MINIMAL' | 'BOLD') {
+    this.activeMood = mood;
     this.notify();
+  }
+
+  public setDayNightTime(time: number) {
+    this.dayNightTime = time;
+    this.notify();
+  }
+
+  // --- Auth & User Management ---
+  public login(email: string, role: 'USER' | 'ADMIN' = 'USER', name = 'Valued Client'): { success: boolean; message: string } {
+    const existing = this.registeredUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+
+    if (existing?.isBanned) {
+      return { success: false, message: 'This account has been banned by Administrator.' };
+    }
+
+    const loginTime = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    if (existing) {
+      existing.lastLoginAt = loginTime;
+      this.currentUser = { ...existing };
+    } else {
+      const newUser: User = {
+        id: `usr-${Date.now()}`,
+        email,
+        name,
+        role,
+        avatar: '/images/hero_model.png',
+        registeredAt: loginTime,
+        lastLoginAt: loginTime,
+        isBanned: false
+      };
+      this.registeredUsers.unshift(newUser);
+      this.currentUser = { ...newUser };
+    }
+
+    this.notify();
+    return { success: true, message: `Welcome ${this.currentUser.name}!` };
+  }
+
+  public register(name: string, email: string, password: string): { success: boolean; message: string } {
+    const existing = this.registeredUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      return { success: false, message: 'An account with this email address already exists.' };
+    }
+
+    const regTime = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const newUser: User = {
+      id: `usr-${Date.now()}`,
+      email,
+      name,
+      role: 'USER',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      registeredAt: regTime,
+      lastLoginAt: regTime,
+      isBanned: false,
+      password
+    };
+
+    this.registeredUsers.unshift(newUser);
+    this.currentUser = { ...newUser };
+    this.notify();
+    return { success: true, message: `Account created successfully. Welcome ${name}!` };
   }
 
   public logout() {
@@ -147,6 +251,69 @@ class Store {
     if (this.activeRoute === 'admin' || this.activeRoute === 'account') {
       this.activeRoute = 'home';
     }
+    this.notify();
+  }
+
+  public updateUserProfile(name: string, avatarUrl?: string): { success: boolean; message: string } {
+    if (!this.currentUser) return { success: false, message: 'No active session.' };
+
+    this.currentUser.name = name;
+    if (avatarUrl) this.currentUser.avatar = avatarUrl;
+
+    const idx = this.registeredUsers.findIndex((u) => u.id === this.currentUser?.id);
+    if (idx !== -1) {
+      this.registeredUsers[idx].name = name;
+      if (avatarUrl) this.registeredUsers[idx].avatar = avatarUrl;
+    }
+
+    this.notify();
+    return { success: true, message: 'Profile updated successfully!' };
+  }
+
+  public changeUserPassword(oldPass: string, newPass: string): { success: boolean; message: string } {
+    if (!this.currentUser) return { success: false, message: 'No active session.' };
+
+    const idx = this.registeredUsers.findIndex((u) => u.id === this.currentUser?.id);
+    if (idx !== -1) {
+      if (this.registeredUsers[idx].password && this.registeredUsers[idx].password !== oldPass) {
+        return { success: false, message: 'Current password is incorrect.' };
+      }
+      this.registeredUsers[idx].password = newPass;
+      this.currentUser.password = newPass;
+      this.notify();
+      return { success: true, message: 'Password updated successfully!' };
+    }
+    return { success: false, message: 'User record not found.' };
+  }
+
+  public banUser(userId: string) {
+    const user = this.registeredUsers.find((u) => u.id === userId);
+    if (user && user.role !== 'ADMIN') {
+      user.isBanned = true;
+      if (this.currentUser?.id === userId) this.logout();
+      else this.notify();
+    }
+  }
+
+  public unbanUser(userId: string) {
+    const user = this.registeredUsers.find((u) => u.id === userId);
+    if (user) {
+      user.isBanned = false;
+      this.notify();
+    }
+  }
+
+  public removeUser(userId: string) {
+    const user = this.registeredUsers.find((u) => u.id === userId);
+    if (user && user.role !== 'ADMIN') {
+      this.registeredUsers = this.registeredUsers.filter((u) => u.id !== userId);
+      if (this.currentUser?.id === userId) this.logout();
+      else this.notify();
+    }
+  }
+
+  public updateHeroBanner(config: Partial<HeroBannerConfig>) {
+    this.heroBanner = { ...this.heroBanner, ...config };
     this.notify();
   }
 
@@ -256,7 +423,6 @@ class Store {
       trackingNumber: tracking
     };
 
-    // Mark applied coupon as used
     if (this.appliedCoupon) {
       const c = this.coupons.find((cp) => cp.code === this.appliedCoupon?.code);
       if (c) {
@@ -266,7 +432,6 @@ class Store {
       this.appliedCoupon = null;
     }
 
-    // Reduce product stock
     newOrder.items.forEach((item) => {
       const prod = this.products.find((p) => p.id === item.productId);
       if (prod) {

@@ -13,12 +13,15 @@ export function renderAccountPage(activeTab = 'orders'): string {
         
         <!-- Client Profile Header -->
         <div class="account-header flex justify-between items-center" style="margin-bottom: 32px; border-bottom: 1px solid var(--color-border); padding-bottom: 24px;">
-          <div>
-            <div class="subtitle" style="letter-spacing: 0.15em;">ATELIER PRIVATE PROFILE</div>
-            <h1 class="heading-2 font-serif">${user ? user.name : 'Valued Client'}</h1>
-            <p style="font-size: 0.85rem; color: var(--color-muted); margin-top: 4px;">
-              ${user ? user.email : 'Guest Client'} &bull; <span class="text-gold" style="font-weight: 600;">HAUTE CLUB VIP MEMBER</span>
-            </p>
+          <div class="flex items-center gap-md">
+            <img src="${user?.avatar || '/images/hero_model.png'}" alt="${user?.name || 'User'}" style="width: 72px; height: 72px; object-fit: cover; border-radius: 50%; border: 2px solid var(--color-gold);" />
+            <div>
+              <div class="subtitle" style="letter-spacing: 0.15em;">ATELIER PRIVATE PROFILE</div>
+              <h1 class="heading-2 font-serif">${user ? user.name : 'Valued Client'}</h1>
+              <p style="font-size: 0.85rem; color: var(--color-muted); margin-top: 4px;">
+                ${user ? user.email : 'Guest Client'} &bull; <span class="text-gold" style="font-weight: 600;">HAUTE CLUB VIP MEMBER</span>
+              </p>
+            </div>
           </div>
 
           <div>
@@ -40,7 +43,7 @@ export function renderAccountPage(activeTab = 'orders'): string {
                 <i class="fa-solid fa-heart"></i> Saved Wishlist (${wishlistedProducts.length})
               </button>
               <button class="admin-nav-item ${activeTab === 'profile' ? 'active' : ''}" data-acc-tab="profile">
-                <i class="fa-solid fa-user-gear"></i> Personal Preferences
+                <i class="fa-solid fa-user-gear"></i> Profile & Security
               </button>
             </nav>
           </aside>
@@ -175,21 +178,57 @@ function renderWishlistTab(products: any[]): string {
 
 function renderProfileTab(user: any): string {
   return `
-    <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 24px;">
-      <h3 class="heading-3 font-serif" style="margin-bottom: 16px;">Personal Details</h3>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
-        <div>
-          <label class="form-label">Full Name</label>
-          <input type="text" value="${user?.name || ''}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border);" readonly />
-        </div>
-        <div>
-          <label class="form-label">Email Address</label>
-          <input type="email" value="${user?.email || ''}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border);" readonly />
-        </div>
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      
+      <!-- Edit Profile Card -->
+      <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 24px;">
+        <h3 class="heading-3 font-serif" style="margin-bottom: 16px;">Edit Profile Information</h3>
+        <form id="edit-profile-form">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div>
+              <label class="form-label">Full Name *</label>
+              <input type="text" id="profile-edit-name" value="${user?.name || ''}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required />
+            </div>
+            <div>
+              <label class="form-label">Email Address (Read-only)</label>
+              <input type="email" value="${user?.email || ''}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); background: var(--color-ivory);" readonly />
+            </div>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <label class="form-label">Profile Picture Avatar URL</label>
+            <input type="url" id="profile-edit-avatar" value="${user?.avatar || ''}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" placeholder="https://..." />
+            <div style="font-size: 0.72rem; color: var(--color-muted); margin-top: 4px;">Paste an image URL or choose one of our luxury defaults.</div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">SAVE PROFILE CHANGES</button>
+        </form>
       </div>
-      <p style="font-size: 0.8rem; color: var(--color-muted);">
-        Account Security: Password protected with Atelier multi-factor encryption standards.
-      </p>
+
+      <!-- Change Password Card -->
+      <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 24px;">
+        <h3 class="heading-3 font-serif" style="margin-bottom: 16px;">Security & Change Password</h3>
+        <form id="change-password-form">
+          <div style="margin-bottom: 14px;">
+            <label class="form-label">Current Password</label>
+            <input type="password" id="pass-old" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" placeholder="••••••••" required />
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+              <label class="form-label">New Password *</label>
+              <input type="password" id="pass-new" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" placeholder="Min 8 chars (Upper, Lower, Num, Symbol)" required />
+            </div>
+            <div>
+              <label class="form-label">Confirm New Password *</label>
+              <input type="password" id="pass-confirm" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" placeholder="Confirm New Password" required />
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-gold" style="padding: 10px 24px;">UPDATE PASSWORD</button>
+        </form>
+      </div>
+
     </div>
   `;
 }

@@ -32,10 +32,10 @@ export function renderHomePage(showLoader = false): string {
       <div class="container">
         <div class="hero-grid">
           <div>
-            <span class="hero-tag"><i class="fa-solid fa-sparkles"></i> NEW SEASON 2026</span>
-            <h1 class="hero-title font-serif">THE NEW ERA</h1>
+            <span class="hero-tag"><i class="fa-solid fa-sparkles"></i> ${store.heroBanner.subtitle}</span>
+            <h1 class="hero-title font-serif">${store.heroBanner.title}</h1>
             <p class="hero-desc">
-              Unveiling a sanctuary of fluid drapery, immaculate tailoring, and haute couture elegance designed for the modern woman.
+              ${store.heroBanner.tagline}
             </p>
             <div class="flex gap-md" style="flex-wrap: wrap;">
               <button class="btn btn-primary" data-route="shop">SHOP COLLECTION</button>
@@ -44,7 +44,7 @@ export function renderHomePage(showLoader = false): string {
           </div>
 
           <div class="hero-image-wrapper">
-            <img src="/images/hero_model.png" alt="THE ATELIER Model" id="hero-parallax-img" />
+            <img src="${store.heroBanner.imageUrl}" alt="THE ATELIER Model" id="hero-parallax-img" />
             <div class="hero-badge-overlay">
               <div class="hero-badge-number">01 / 08</div>
               <div class="hero-badge-text">SPRING / SUMMER EDIT</div>

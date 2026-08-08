@@ -1,4 +1,3 @@
-
 export function renderAuthModal(activeTab: 'login' | 'register' = 'login'): string {
   return `
     <div class="modal-overlay active" id="auth-modal-overlay">
@@ -45,7 +44,7 @@ export function renderAuthModal(activeTab: 'login' | 'register' = 'login'): stri
             </button>
 
             <div style="margin-top: 16px; font-size: 0.75rem; color: var(--color-muted); text-align: center;">
-              Admin access? Use <strong>atif@admin.com</strong> / <strong>atif@access.com</strong>
+              Admin credentials: <strong>atif@admin.com</strong> / <strong>atif@access.com</strong>
             </div>
           </form>
         `
@@ -66,14 +65,24 @@ export function renderAuthModal(activeTab: 'login' | 'register' = 'login'): stri
               <input type="password" id="reg-password" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-black);" placeholder="Min 8 chars, 1 Upper, 1 Lower, 1 Num, 1 Symbol" required />
             </div>
 
-            <!-- Password Requirements checklist -->
-            <div style="background: var(--color-ivory); padding: 12px; border-radius: var(--radius-sm); font-size: 0.72rem; color: var(--color-muted); margin-bottom: 20px;">
-              <div style="font-weight: 600; margin-bottom: 4px; color: var(--color-black);">Password Requirements:</div>
-              <div id="rule-len"><i class="fa-solid fa-circle-dot" style="margin-right: 4px;"></i> At least 8 characters</div>
-              <div id="rule-upper"><i class="fa-solid fa-circle-dot" style="margin-right: 4px;"></i> 1 Uppercase letter (A-Z)</div>
-              <div id="rule-lower"><i class="fa-solid fa-circle-dot" style="margin-right: 4px;"></i> 1 Lowercase letter (a-z)</div>
-              <div id="rule-num"><i class="fa-solid fa-circle-dot" style="margin-right: 4px;"></i> 1 Numeric digit (0-9)</div>
-              <div id="rule-sym"><i class="fa-solid fa-circle-dot" style="margin-right: 4px;"></i> 1 Special symbol (!@#$%^&*)</div>
+            <!-- Dynamic Password Checklist (switches from light grey to BLACK checkmark as typed) -->
+            <div style="background: var(--color-ivory); padding: 14px; border-radius: var(--radius-sm); font-size: 0.75rem; margin-bottom: 20px;">
+              <div style="font-weight: 600; margin-bottom: 6px; color: var(--color-black);">Password Requirements:</div>
+              <div id="rule-len" style="color: #999; margin-bottom: 4px; transition: all 0.2s ease;">
+                <i class="fa-regular fa-circle" id="icon-len" style="margin-right: 6px;"></i> At least 8 characters
+              </div>
+              <div id="rule-upper" style="color: #999; margin-bottom: 4px; transition: all 0.2s ease;">
+                <i class="fa-regular fa-circle" id="icon-upper" style="margin-right: 6px;"></i> 1 Uppercase letter (A-Z)
+              </div>
+              <div id="rule-lower" style="color: #999; margin-bottom: 4px; transition: all 0.2s ease;">
+                <i class="fa-regular fa-circle" id="icon-lower" style="margin-right: 6px;"></i> 1 Lowercase letter (a-z)
+              </div>
+              <div id="rule-num" style="color: #999; margin-bottom: 4px; transition: all 0.2s ease;">
+                <i class="fa-regular fa-circle" id="icon-num" style="margin-right: 6px;"></i> 1 Numeric digit (0-9)
+              </div>
+              <div id="rule-sym" style="color: #999; transition: all 0.2s ease;">
+                <i class="fa-regular fa-circle" id="icon-sym" style="margin-right: 6px;"></i> 1 Special symbol (!@#$%^&*)
+              </div>
             </div>
 
             <button type="submit" class="btn btn-primary" style="width: 100%; height: 48px;">
