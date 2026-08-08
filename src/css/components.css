@@ -552,6 +552,13 @@
   .footer-grid { grid-template-columns: 1fr 1fr; }
 }
 
+/* Hamburger: hidden on desktop, visible on mobile */
+.nav-hamburger { display: none; }
+
+@media (max-width: 992px) {
+  .nav-hamburger { display: flex; }
+}
+
 @media (max-width: 576px) {
   .footer-grid { grid-template-columns: 1fr; }
 }
