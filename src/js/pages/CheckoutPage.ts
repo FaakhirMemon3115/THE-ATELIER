@@ -29,7 +29,7 @@ export function renderCheckoutPage(confirmedOrder: Order | null = null): string 
           <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 12px;">ORDER SUMMARY</div>
           ${confirmedOrder.items
             .map(
-              (item) => `
+              (item: Order['items'][number]) => `
             <div class="flex justify-between items-center" style="margin-bottom: 8px; font-size: 0.85rem;">
               <span>${item.quantity}x ${item.productName} (${item.selectedSize} / ${item.selectedColor})</span>
               <strong>Rs. ${(item.price * item.quantity).toLocaleString()}</strong>
