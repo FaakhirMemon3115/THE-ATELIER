@@ -63,6 +63,18 @@ class Store {
   public selectedProductForModal: Product | null = null;
   public currentUser: User | null = null;
   public appliedCoupon: Coupon | null = null;
+  public activeMood: 'ALL' | 'CONFIDENT' | 'ROMANTIC' | 'MINIMAL' | 'BOLD' = 'ALL';
+  public dayNightTime: number = 14; // 14:00 (2 PM)
+
+  public setMood(mood: 'ALL' | 'CONFIDENT' | 'ROMANTIC' | 'MINIMAL' | 'BOLD') {
+    this.activeMood = mood;
+    this.notify();
+  }
+
+  public setDayNightTime(time: number) {
+    this.dayNightTime = time;
+    this.notify();
+  }
 
   private listeners: (() => void)[] = [];
 
