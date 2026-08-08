@@ -22,6 +22,7 @@ let quizAnswers: string[] = [];
 let accountTab = 'orders';
 let adminTab = 'dashboard';
 let confirmedOrderData: any = null;
+let currentShopCategory = 'ALL';
 let hasBrandLoaded = false;
 
 // Builder state
