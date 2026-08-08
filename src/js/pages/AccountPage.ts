@@ -3,174 +3,193 @@ import { PRODUCTS_DATA } from '../data/products';
 import { renderProductCard } from '../components/ProductCard';
 
 export function renderAccountPage(activeTab = 'orders'): string {
+  const user = store.currentUser;
+  const userOrders = store.getUserOrders();
   const wishlistedProducts = PRODUCTS_DATA.filter((p) => store.wishlist.includes(p.id));
 
   return `
-    <div class="account-container">
+    <div class="account-container" style="padding: var(--space-2xl) 0 var(--space-3xl);">
       <div class="container">
-        <!-- Header -->
-        <div style="margin-bottom: var(--space-2xl);">
-          <div class="subtitle">MY ATELIER PROFILE</div>
-          <h1 class="heading-1 font-serif">WELCOME BACK, ${store.user.name.toUpperCase()}</h1>
+        
+        <!-- Client Profile Header -->
+        <div class="account-header flex justify-between items-center" style="margin-bottom: 32px; border-bottom: 1px solid var(--color-border); padding-bottom: 24px;">
+          <div>
+            <div class="subtitle" style="letter-spacing: 0.15em;">ATELIER PRIVATE PROFILE</div>
+            <h1 class="heading-2 font-serif">${user ? user.name : 'Valued Client'}</h1>
+            <p style="font-size: 0.85rem; color: var(--color-muted); margin-top: 4px;">
+              ${user ? user.email : 'Guest Client'} &bull; <span class="text-gold" style="font-weight: 600;">HAUTE CLUB VIP MEMBER</span>
+            </p>
+          </div>
+
+          <div>
+            <button class="btn btn-outline" id="account-logout-btn" style="padding: 8px 18px; font-size: 0.8rem;">
+              <i class="fa-solid fa-right-from-bracket"></i> SIGN OUT
+            </button>
+          </div>
         </div>
 
+        <!-- Account Layout -->
         <div class="account-layout">
-          <!-- Sidebar Nav -->
+          <!-- Sidebar Menu -->
           <aside class="account-sidebar">
-            <div class="account-user-card">
-              <div class="user-avatar">${store.user.name.charAt(0)}</div>
-              <h4 class="font-serif heading-3">${store.user.name}</h4>
-              <p style="font-size: 0.75rem; color: var(--color-muted);">${store.user.email}</p>
-            </div>
-
-            <ul class="account-nav-list">
-              <li>
-                <button class="account-nav-btn ${activeTab === 'orders' ? 'active' : ''}" data-tab="orders">
-                  <i class="fa-solid fa-box-open"></i> My Orders (${store.orders.length})
-                </button>
-              </li>
-              <li>
-                <button class="account-nav-btn ${activeTab === 'wishlist' ? 'active' : ''}" data-tab="wishlist">
-                  <i class="fa-regular fa-heart"></i> My Wishlist (${store.wishlist.length})
-                </button>
-              </li>
-              <li>
-                <button class="account-nav-btn ${activeTab === 'addresses' ? 'active' : ''}" data-tab="addresses">
-                  <i class="fa-solid fa-location-dot"></i> Saved Addresses
-                </button>
-              </li>
-              <li>
-                <button class="account-nav-btn ${activeTab === 'dna' ? 'active' : ''}" data-tab="dna">
-                  <i class="fa-solid fa-wand-magic-sparkles"></i> Style DNA Profile
-                </button>
-              </li>
-            </ul>
+            <nav style="display: flex; flex-direction: column; gap: 4px;">
+              <button class="admin-nav-item ${activeTab === 'orders' ? 'active' : ''}" data-acc-tab="orders">
+                <i class="fa-solid fa-box-archive"></i> My Orders (${userOrders.length})
+              </button>
+              <button class="admin-nav-item ${activeTab === 'wishlist' ? 'active' : ''}" data-acc-tab="wishlist">
+                <i class="fa-solid fa-heart"></i> Saved Wishlist (${wishlistedProducts.length})
+              </button>
+              <button class="admin-nav-item ${activeTab === 'profile' ? 'active' : ''}" data-acc-tab="profile">
+                <i class="fa-solid fa-user-gear"></i> Personal Preferences
+              </button>
+            </nav>
           </aside>
 
-          <!-- Content Panel -->
-          <main class="account-content-card">
+          <!-- Main View -->
+          <div class="account-content">
             ${
               activeTab === 'orders'
-                ? `
-              <h3 class="font-serif heading-2" style="margin-bottom: 20px;">MY ORDERS & TRACKING</h3>
-
-              ${store.orders
-                .map((order) => {
-                  // Determine timeline step index
-                  const statusMap: Record<string, number> = {
-                    Pending: 1,
-                    Confirmed: 2,
-                    Packed: 3,
-                    Shipped: 4,
-                    Delivered: 5
-                  };
-                  const currentStep = statusMap[order.status] || 2;
-                  const progressPct = ((currentStep - 1) / 4) * 100;
-
-                  return `
-                  <div class="order-card">
-                    <div class="order-header">
-                      <div>
-                        <strong>Order #${order.id}</strong> | <span class="text-muted">${order.date}</span>
-                      </div>
-                      <div>
-                        Status: <strong class="text-gold">${order.status.toUpperCase()}</strong>
-                      </div>
-                    </div>
-
-                    <!-- Live Order Tracking Timeline Bar -->
-                    <div class="tracking-timeline">
-                      <div class="tracking-timeline-progress" style="width: ${progressPct}%;"></div>
-                      
-                      <div class="timeline-step ${currentStep >= 1 ? 'completed' : ''} ${currentStep === 1 ? 'active' : ''}">
-                        <div class="step-node"><i class="fa-solid fa-cart-shopping"></i></div>
-                        <span>Placed</span>
-                      </div>
-
-                      <div class="timeline-step ${currentStep >= 2 ? 'completed' : ''} ${currentStep === 2 ? 'active' : ''}">
-                        <div class="step-node"><i class="fa-solid fa-check"></i></div>
-                        <span>Confirmed</span>
-                      </div>
-
-                      <div class="timeline-step ${currentStep >= 3 ? 'completed' : ''} ${currentStep === 3 ? 'active' : ''}">
-                        <div class="step-node"><i class="fa-solid fa-box"></i></div>
-                        <span>Packed</span>
-                      </div>
-
-                      <div class="timeline-step ${currentStep >= 4 ? 'completed' : ''} ${currentStep === 4 ? 'active' : ''}">
-                        <div class="step-node"><i class="fa-solid fa-truck"></i></div>
-                        <span>Shipped</span>
-                      </div>
-
-                      <div class="timeline-step ${currentStep >= 5 ? 'completed' : ''} ${currentStep === 5 ? 'active' : ''}">
-                        <div class="step-node"><i class="fa-solid fa-house-chimney"></i></div>
-                        <span>Delivered</span>
-                      </div>
-                    </div>
-
-                    <!-- Purchased items list -->
-                    <div style="margin-top: 20px;">
-                      ${order.items
-                        .map(
-                          (item) => `
-                        <div class="flex gap-md items-center" style="padding: 10px 0; border-bottom: 1px solid var(--color-border-light);">
-                          <img src="${item.product.primaryImage}" style="width: 50px; height: 60px; object-fit: cover; border-radius: var(--radius-sm);" />
-                          <div style="flex: 1;">
-                            <div style="font-weight: 600; font-family: var(--font-serif);">${item.product.name}</div>
-                            <div style="font-size: 0.75rem; color: var(--color-muted);">Size: ${item.selectedSize} | Color: ${item.selectedColor}</div>
-                          </div>
-                          <div style="font-weight: 700;">Rs. ${item.product.price.toLocaleString()}</div>
-                        </div>
-                      `
-                        )
-                        .join('')}
-                    </div>
-
-                    <div class="flex justify-between items-center" style="margin-top: 16px;">
-                      <span style="font-size: 0.85rem; color: var(--color-muted);">Estimated Delivery: <strong>${order.estimatedDelivery}</strong></span>
-                      <span style="font-size: 1.1rem; font-weight: 700; font-family: var(--font-serif);">Total: Rs. ${order.total.toLocaleString()}</span>
-                    </div>
-                  </div>
-                `;
-                })
-                .join('')}
-            `
+                ? renderUserOrdersTab(userOrders)
                 : activeTab === 'wishlist'
-                ? `
-              <h3 class="font-serif heading-2" style="margin-bottom: 20px;">MY WISHLIST (${wishlistedProducts.length})</h3>
-              ${
-                wishlistedProducts.length === 0
-                  ? `<p class="text-muted">Your wishlist is currently empty.</p>`
-                  : `<div class="products-grid">${wishlistedProducts.map(renderProductCard).join('')}</div>`
-              }
-            `
-                : activeTab === 'addresses'
-                ? `
-              <h3 class="font-serif heading-2" style="margin-bottom: 20px;">SAVED DELIVERY ADDRESSES</h3>
-              <div style="border: 1px solid var(--color-border); padding: 20px; border-radius: var(--radius-sm); max-width: 450px;">
-                <div class="subtitle" style="margin-bottom: 4px;">PRIMARY HOME ADDRESS</div>
-                <h4 style="font-size: 1.1rem; margin-bottom: 8px;">${store.user.name}</h4>
-                <p style="font-size: 0.85rem; color: var(--color-muted); line-height: 1.6;">
-                  ${store.user.address}<br>
-                  ${store.user.city}, ${store.user.postalCode}<br>
-                  Phone: ${store.user.phone}
-                </p>
-              </div>
-            `
-                : `
-              <h3 class="font-serif heading-2" style="margin-bottom: 20px;">YOUR STYLE DNA PROFILE</h3>
-              <div style="background-color: #FAF5EE; padding: 24px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
-                <i class="fa-solid fa-wand-magic-sparkles text-gold" style="font-size: 2rem; margin-bottom: 12px;"></i>
-                <h4 class="font-serif heading-2 text-gold">MODERN FEMININE MINIMALIST</h4>
-                <p style="font-size: 0.9rem; color: var(--color-muted); margin-top: 8px;">
-                  Your profile prioritizes clean fluid silhouettes, warm ivory & nude silk fabrics, and understated gold jewelry accents.
-                </p>
-              </div>
-            `
+                ? renderWishlistTab(wishlistedProducts)
+                : renderProfileTab(user)
             }
-          </main>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function renderUserOrdersTab(orders: any[]): string {
+  if (orders.length === 0) {
+    return `
+      <div style="padding: 48px 24px; text-align: center; background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm);">
+        <i class="fa-solid fa-box-open" style="font-size: 2.5rem; color: var(--color-muted); margin-bottom: 14px;"></i>
+        <h3 class="heading-3 font-serif" style="margin-bottom: 8px;">NO ORDERS FOUND</h3>
+        <p style="font-size: 0.85rem; color: var(--color-muted); max-width: 360px; margin: 0 auto 20px;">
+          You have not placed any orders yet. Discover your signature style in our haute couture catalog.
+        </p>
+        <button class="btn btn-primary" data-route="shop" data-cat="ALL">DISCOVER COLLECTION</button>
+      </div>
+    `;
+  }
+
+  return `
+    <h3 class="heading-3 font-serif" style="margin-bottom: 20px;">Order History & Live Tracking</h3>
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      ${orders
+        .map(
+          (o) => `
+        <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 20px;">
+          <!-- Order Summary Header -->
+          <div class="flex justify-between items-center" style="border-bottom: 1px solid var(--color-border-light); padding-bottom: 12px; margin-bottom: 16px;">
+            <div>
+              <span style="font-weight: 700; font-family: monospace; font-size: 0.9rem;">ORDER ${o.id}</span>
+              <span style="font-size: 0.8rem; color: var(--color-muted); margin-left: 12px;">Placed on ${o.date}</span>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; background: var(--color-ivory); padding: 4px 10px; border-radius: var(--radius-pill); font-weight: 600;" class="text-gold">
+                STATUS: ${o.status.toUpperCase()}
+              </span>
+            </div>
+          </div>
+
+          <!-- Order Timeline Visual -->
+          <div style="margin-bottom: 20px; padding: 12px 16px; background: #FAF9F6; border-radius: var(--radius-sm);">
+            <div class="flex justify-between" style="font-size: 0.75rem; font-weight: 600; margin-bottom: 8px;">
+              <span>1. Order Placed</span>
+              <span>2. Processing</span>
+              <span>3. Out for Delivery</span>
+              <span>4. Delivered</span>
+            </div>
+            <div style="height: 6px; background: #EAE3D9; border-radius: 3px; overflow: hidden;">
+              <div style="width: ${
+                o.status === 'Pending'
+                  ? '25%'
+                  : o.status === 'Processing'
+                  ? '50%'
+                  : o.status === 'Shipped'
+                  ? '75%'
+                  : '100%'
+              }; height: 100%; background: var(--color-gold);"></div>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--color-muted); margin-top: 6px;">
+              Tracking Number: <strong>${o.trackingNumber}</strong>
+            </div>
+          </div>
+
+          <!-- Items list -->
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+            ${o.items
+              .map(
+                (item: any) => `
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="${item.image}" style="width: 44px; height: 56px; object-fit: cover; border-radius: 2px;" />
+                <div style="flex: 1;">
+                  <div style="font-weight: 600; font-size: 0.85rem;">${item.productName}</div>
+                  <div style="font-size: 0.75rem; color: var(--color-muted);">Size: ${item.selectedSize} &bull; Color: ${item.selectedColor} &bull; Qty: ${item.quantity}</div>
+                </div>
+                <div style="font-weight: 700; font-size: 0.85rem;">Rs. ${(item.price * item.quantity).toLocaleString()}</div>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+
+          <!-- Total Footer -->
+          <div class="flex justify-between items-center" style="border-top: 1px solid var(--color-border-light); padding-top: 12px; font-size: 0.9rem;">
+            <span>Total Paid (incl. delivery & tax):</span>
+            <strong class="text-gold" style="font-size: 1.1rem;">Rs. ${o.total.toLocaleString()}</strong>
+          </div>
+        </div>
+      `
+        )
+        .join('')}
+    </div>
+  `;
+}
+
+function renderWishlistTab(products: any[]): string {
+  if (products.length === 0) {
+    return `
+      <div style="padding: 48px 24px; text-align: center; background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm);">
+        <i class="fa-regular fa-heart" style="font-size: 2.5rem; color: var(--color-muted); margin-bottom: 14px;"></i>
+        <h3 class="heading-3 font-serif" style="margin-bottom: 8px;">YOUR WISHLIST IS EMPTY</h3>
+        <p style="font-size: 0.85rem; color: var(--color-muted); max-width: 360px; margin: 0 auto 20px;">
+          Save your favorite gowns, bags, and shoes by clicking the heart icon on product cards.
+        </p>
+        <button class="btn btn-primary" data-route="shop" data-cat="ALL">EXPLORE CATALOG</button>
+      </div>
+    `;
+  }
+
+  return `
+    <h3 class="heading-3 font-serif" style="margin-bottom: 20px;">Saved Favorites (${products.length})</h3>
+    <div class="products-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));">
+      ${products.map(renderProductCard).join('')}
+    </div>
+  `;
+}
+
+function renderProfileTab(user: any): string {
+  return `
+    <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 24px;">
+      <h3 class="heading-3 font-serif" style="margin-bottom: 16px;">Personal Details</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+        <div>
+          <label class="form-label">Full Name</label>
+          <input type="text" value="${user?.name || ''}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border);" readonly />
+        </div>
+        <div>
+          <label class="form-label">Email Address</label>
+          <input type="email" value="${user?.email || ''}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border);" readonly />
         </div>
       </div>
+      <p style="font-size: 0.8rem; color: var(--color-muted);">
+        Account Security: Password protected with Atelier multi-factor encryption standards.
+      </p>
     </div>
   `;
 }

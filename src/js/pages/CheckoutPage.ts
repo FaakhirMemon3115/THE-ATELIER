@@ -5,207 +5,227 @@ export function renderCheckoutPage(confirmedOrder: Order | null = null): string 
   if (confirmedOrder) {
     return `
       <div class="container" style="padding: var(--space-3xl) 0; max-width: 700px; text-align: center;">
-        <div style="width: 80px; height: 80px; background-color: var(--color-black); color: var(--color-gold-bright); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 24px;">
-          <i class="fa-solid fa-check"></i>
+        <div style="font-size: 3rem; color: var(--color-gold); margin-bottom: 16px;">
+          <i class="fa-solid fa-circle-check"></i>
         </div>
-
-        <div class="subtitle">ORDER CONFIRMED</div>
-        <h1 class="heading-1 font-serif" style="margin: 10px 0 16px;">THANK YOU FOR YOUR ORDER</h1>
-        <p style="font-size: 1.05rem; color: var(--color-muted); margin-bottom: 24px;">
-          Your order number is <strong class="text-gold" style="font-size: 1.2rem;">#${confirmedOrder.id}</strong>. We have sent a confirmation receipt to <strong>${confirmedOrder.email}</strong>.
+        <div class="subtitle">HAUTE COUTURE CONFIRMATION</div>
+        <h1 class="heading-1 font-serif" style="margin-bottom: 12px;">THANK YOU FOR YOUR ORDER</h1>
+        <p style="font-size: 1rem; color: var(--color-muted); margin-bottom: 24px;">
+          Your order number is <strong style="color: var(--color-black); font-family: monospace;">#${confirmedOrder.id}</strong>. A private order receipt has been sent to <strong>${confirmedOrder.customerEmail}</strong>.
         </p>
 
-        <!-- Delivery Date Timeline Card -->
-        <div style="background-color: #FFFFFF; padding: 24px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); margin-bottom: 30px; text-align: left;">
-          <div class="flex justify-between items-center" style="margin-bottom: 16px;">
-            <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--color-muted); font-weight: 600;">ESTIMATED DELIVERY</span>
-            <span class="text-gold" style="font-weight: 700;">${confirmedOrder.estimatedDelivery}</span>
+        <div style="background: #FFF; border: 1px solid var(--color-border); padding: 24px; text-align: left; margin-bottom: 32px; border-radius: var(--radius-sm);">
+          <div class="flex justify-between" style="border-bottom: 1px solid var(--color-border-light); padding-bottom: 12px; margin-bottom: 16px;">
+            <div>
+              <span class="form-label">Tracking Code:</span>
+              <strong style="color: var(--color-gold); font-family: monospace;">${confirmedOrder.trackingNumber}</strong>
+            </div>
+            <div>
+              <span class="form-label">Estimated Delivery:</span>
+              <strong>3-5 Business Days</strong>
+            </div>
           </div>
 
-          <div style="font-size: 0.85rem; line-height: 1.8;">
-            <strong>Deliver To:</strong> ${confirmedOrder.customerName}<br>
-            <strong>Shipping Address:</strong> ${confirmedOrder.address}, ${confirmedOrder.city}<br>
-            <strong>Payment Method:</strong> ${confirmedOrder.paymentMethod}<br>
-            <strong>Total Paid:</strong> Rs. ${confirmedOrder.total.toLocaleString()}
+          <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 12px;">ORDER SUMMARY</div>
+          ${confirmedOrder.items
+            .map(
+              (item) => `
+            <div class="flex justify-between items-center" style="margin-bottom: 8px; font-size: 0.85rem;">
+              <span>${item.quantity}x ${item.productName} (${item.selectedSize} / ${item.selectedColor})</span>
+              <strong>Rs. ${(item.price * item.quantity).toLocaleString()}</strong>
+            </div>
+          `
+            )
+            .join('')}
+
+          <div style="border-top: 1px solid var(--color-border-light); margin-top: 12px; padding-top: 12px;" class="flex justify-between">
+            <span style="font-weight: 700;">TOTAL PAID:</span>
+            <strong style="font-size: 1.1rem; color: var(--color-gold);">Rs. ${confirmedOrder.total.toLocaleString()}</strong>
           </div>
         </div>
 
         <div class="flex gap-md justify-center">
-          <button class="btn btn-primary" data-route="account" data-tab="orders">
-            <i class="fa-solid fa-truck-fast"></i> TRACK ORDER STATUS
-          </button>
-          <button class="btn btn-secondary" data-route="shop">CONTINUE SHOPPING</button>
+          <button class="btn btn-primary" data-route="account" data-tab="orders">TRACK MY ORDER</button>
+          <button class="btn btn-outline" data-route="shop" data-cat="ALL">CONTINUE SHOPPING</button>
         </div>
       </div>
     `;
   }
 
+  const cart = store.cart;
   const subtotal = store.getCartSubtotal();
   const discount = store.getDiscountAmount();
   const shipping = store.getShippingFee();
   const total = store.getCartTotal();
+  const appliedCoupon = store.appliedCoupon;
+  const user = store.currentUser;
+
+  if (cart.length === 0) {
+    return `
+      <div class="container" style="padding: var(--space-3xl) 0; text-align: center;">
+        <i class="fa-solid fa-bag-shopping" style="font-size: 3rem; color: var(--color-muted); margin-bottom: 16px;"></i>
+        <h2 class="heading-2 font-serif" style="margin-bottom: 12px;">YOUR ATELIER BAG IS EMPTY</h2>
+        <p style="font-size: 0.9rem; color: var(--color-muted); margin-bottom: 24px;">Add luxury pieces to your bag before proceeding to checkout.</p>
+        <button class="btn btn-primary" data-route="shop" data-cat="ALL">EXPLORE CATALOG</button>
+      </div>
+    `;
+  }
 
   return `
-    <div class="container" style="padding: var(--space-2xl) 0 var(--space-3xl);">
-      <div style="text-align: center; margin-bottom: var(--space-2xl);">
-        <div class="subtitle">DISTRACTION-FREE CHECKOUT</div>
-        <h1 class="heading-1 font-serif">SECURE ATELIER CHECKOUT</h1>
-      </div>
+    <div class="checkout-container" style="padding: var(--space-2xl) 0 var(--space-3xl);">
+      <div class="container">
+        
+        <div style="margin-bottom: 24px;">
+          <div class="subtitle">COMPLIMENTARY COMPLIANCE</div>
+          <h1 class="heading-2 font-serif">SECURE ATELIER CHECKOUT</h1>
+        </div>
 
-      <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--space-2xl); align-items: start;">
-        <!-- Left: Form Steps -->
-        <div>
-          <!-- Step 01: Information -->
-          <div style="background-color: #FFFFFF; padding: 24px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); margin-bottom: 24px;">
-            <h3 class="font-serif heading-3" style="margin-bottom: 16px;">01 CUSTOMER INFORMATION</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-              <div class="form-group" style="grid-column: span 2;">
-                <label class="form-label">Full Name</label>
-                <input type="text" id="chk-name" class="form-control" value="${store.user.name}" placeholder="Full Name" />
+        <div class="checkout-grid" style="display: grid; grid-template-columns: 3fr 2fr; gap: 32px;">
+          <!-- Form Section -->
+          <div>
+            <form id="checkout-form">
+              <!-- Contact Information -->
+              <div style="background: #FFF; border: 1px solid var(--color-border); padding: 24px; border-radius: var(--radius-sm); margin-bottom: 24px;">
+                <h3 class="heading-3 font-serif" style="margin-bottom: 16px;">1. Client Contact Details</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                  <div>
+                    <label class="form-label">Full Name *</label>
+                    <input type="text" id="checkout-name" value="${user?.name || ''}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required placeholder="Full Name" />
+                  </div>
+                  <div>
+                    <label class="form-label">Email Address *</label>
+                    <input type="email" id="checkout-email" value="${user?.email || ''}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required placeholder="Email Address" />
+                  </div>
+                </div>
+                <div>
+                  <label class="form-label">Phone Number *</label>
+                  <input type="tel" id="checkout-phone" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required placeholder="+92 300 1234567" />
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Email Address</label>
-                <input type="email" id="chk-email" class="form-control" value="${store.user.email}" placeholder="Email Address" />
+
+              <!-- Shipping Address -->
+              <div style="background: #FFF; border: 1px solid var(--color-border); padding: 24px; border-radius: var(--radius-sm); margin-bottom: 24px;">
+                <h3 class="heading-3 font-serif" style="margin-bottom: 16px;">2. Delivery Address</h3>
+                <div style="margin-bottom: 16px;">
+                  <label class="form-label">Street Address *</label>
+                  <input type="text" id="checkout-address" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required placeholder="House/Apartment #, Street, Block" />
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div>
+                    <label class="form-label">City *</label>
+                    <input type="text" id="checkout-city" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required placeholder="Karachi, Lahore, Islamabad..." />
+                  </div>
+                  <div>
+                    <label class="form-label">Postal Code</label>
+                    <input type="text" id="checkout-zip" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" placeholder="75500" />
+                  </div>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Phone Number</label>
-                <input type="tel" id="chk-phone" class="form-control" value="${store.user.phone}" placeholder="+92 300 0000000" />
+
+              <!-- Payment Method -->
+              <div style="background: #FFF; border: 1px solid var(--color-border); padding: 24px; border-radius: var(--radius-sm); margin-bottom: 24px;">
+                <h3 class="heading-3 font-serif" style="margin-bottom: 16px;">3. Payment Method</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <label style="display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--color-gold); background: var(--color-ivory); border-radius: var(--radius-sm); cursor: pointer;">
+                    <input type="radio" name="payment-method" value="Cash on Delivery" checked style="accent-color: var(--color-gold);" />
+                    <div>
+                      <strong style="display: block; font-size: 0.9rem;">Cash on Delivery (COD)</strong>
+                      <span style="font-size: 0.75rem; color: var(--color-muted);">Pay upon delivery via express courier service.</span>
+                    </div>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer;">
+                    <input type="radio" name="payment-method" value="Online Card Payment" style="accent-color: var(--color-gold);" />
+                    <div>
+                      <strong style="display: block; font-size: 0.9rem;">Credit / Debit Card (Visa, MasterCard, Amex)</strong>
+                      <span style="font-size: 0.75rem; color: var(--color-muted);">256-bit encrypted secure payment gateway.</span>
+                    </div>
+                  </label>
+                </div>
               </div>
-            </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%; height: 54px; font-size: 1rem;">
+                <i class="fa-solid fa-lock"></i> PLACE ORDER (RS. ${total.toLocaleString()})
+              </button>
+            </form>
           </div>
 
-          <!-- Step 02: Delivery Address -->
-          <div style="background-color: #FFFFFF; padding: 24px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); margin-bottom: 24px;">
-            <h3 class="font-serif heading-3" style="margin-bottom: 16px;">02 DELIVERY ADDRESS</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-              <div class="form-group" style="grid-column: span 2;">
-                <label class="form-label">Street Address</label>
-                <input type="text" id="chk-address" class="form-control" value="${store.user.address}" placeholder="House #, Street, Block" />
+          <!-- Order Summary Sidebar -->
+          <div>
+            <div style="background: #FFF; border: 1px solid var(--color-border); padding: 24px; border-radius: var(--radius-sm); position: sticky; top: 100px;">
+              <h3 class="heading-3 font-serif" style="margin-bottom: 16px; border-bottom: 1px solid var(--color-border-light); padding-bottom: 12px;">
+                Order Summary (${cart.reduce((s, i) => s + i.quantity, 0)})
+              </h3>
+
+              <!-- Cart items list -->
+              <div style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                ${cart
+                  .map(
+                    (item) => `
+                  <div class="flex items-center gap-sm">
+                    <img src="${item.product.primaryImage}" style="width: 44px; height: 56px; object-fit: cover; border-radius: 2px;" />
+                    <div style="flex: 1; font-size: 0.8rem;">
+                      <div style="font-weight: 600;">${item.product.name}</div>
+                      <div style="color: var(--color-muted);">Size: ${item.selectedSize} | Color: ${item.selectedColor}</div>
+                      <div style="color: var(--color-muted);">Qty: ${item.quantity} &times; Rs. ${item.product.price.toLocaleString()}</div>
+                    </div>
+                    <div style="font-weight: 700; font-size: 0.85rem;">Rs. ${(item.product.price * item.quantity).toLocaleString()}</div>
+                  </div>
+                `
+                  )
+                  .join('')}
               </div>
-              <div class="form-group">
-                <label class="form-label">City</label>
-                <select id="chk-city" class="form-control">
-                  <option value="Karachi" selected>Karachi</option>
-                  <option value="Lahore">Lahore</option>
-                  <option value="Islamabad">Islamabad</option>
-                  <option value="Rawalpindi">Rawalpindi</option>
-                  <option value="Faisalabad">Faisalabad</option>
-                </select>
+
+              <!-- Coupon Code Form -->
+              <div style="border-top: 1px solid var(--color-border-light); padding-top: 16px; margin-bottom: 20px;">
+                <div class="form-label" style="margin-bottom: 6px;">Single-Use Coupon Promo Code</div>
+                ${
+                  appliedCoupon
+                    ? `
+                  <div style="display: flex; justify-between; items-center; background: #E8F8F5; border: 1px solid #A3E4D7; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.8rem;">
+                    <span style="color: #117864; font-weight: 600;"><i class="fa-solid fa-ticket"></i> ${appliedCoupon.code} (${appliedCoupon.discountPercent}% OFF)</span>
+                    <button id="remove-coupon-btn" style="background: none; border: none; color: var(--color-sale-red); cursor: pointer; text-decoration: underline;">Remove</button>
+                  </div>
+                `
+                    : `
+                  <form id="coupon-form" class="flex gap-xs">
+                    <input type="text" id="coupon-code-input" placeholder="Try ATELIER10 or LUXE20" class="newsletter-input" style="flex: 1; border: 1px solid var(--color-border); font-size: 0.8rem; text-transform: uppercase;" required />
+                    <button type="submit" class="btn btn-gold" style="padding: 8px 14px; font-size: 0.75rem;">APPLY</button>
+                  </form>
+                  <div style="font-size: 0.7rem; color: var(--color-muted); margin-top: 4px;">*Each promotional coupon code can only be redeemed once.</div>
+                `
+                }
               </div>
-              <div class="form-group">
-                <label class="form-label">Postal Code</label>
-                <input type="text" id="chk-postal" class="form-control" value="${store.user.postalCode}" placeholder="75500" />
+
+              <!-- Pricing breakdown -->
+              <div style="border-top: 1px solid var(--color-border-light); padding-top: 16px; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+                <div class="flex justify-between">
+                  <span>Subtotal</span>
+                  <span>Rs. ${subtotal.toLocaleString()}</span>
+                </div>
+                ${
+                  discount > 0
+                    ? `
+                  <div class="flex justify-between" style="color: green;">
+                    <span>Coupon Discount</span>
+                    <span>- Rs. ${discount.toLocaleString()}</span>
+                  </div>
+                `
+                    : ''
+                }
+                <div class="flex justify-between">
+                  <span>Shipping Fee</span>
+                  <span>${shipping === 0 ? '<strong class="text-gold">FREE</strong>' : `Rs. ${shipping}`}</span>
+                </div>
+                <div class="flex justify-between" style="border-top: 1px solid var(--color-border); padding-top: 12px; font-size: 1.1rem; font-weight: 700;">
+                  <span>Total Amount</span>
+                  <span class="text-gold">Rs. ${total.toLocaleString()}</span>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Step 03: Shipping Method -->
-          <div style="background-color: #FFFFFF; padding: 24px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); margin-bottom: 24px;">
-            <h3 class="font-serif heading-3" style="margin-bottom: 16px;">03 SHIPPING METHOD</h3>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-              <label class="flex justify-between items-center" style="padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer;">
-                <div class="flex items-center gap-md">
-                  <input type="radio" name="shipping-opt" checked accent-color="var(--color-gold)" />
-                  <div>
-                    <strong>Standard Delivery (3-5 Business Days)</strong><br>
-                    <span style="font-size: 0.75rem; color: var(--color-muted);">Complimentary on orders over Rs. 5,000</span>
-                  </div>
-                </div>
-                <span>${shipping === 0 ? '<strong class="text-gold">FREE</strong>' : 'Rs. 250'}</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Step 04: Payment Method -->
-          <div style="background-color: #FFFFFF; padding: 24px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);">
-            <h3 class="font-serif heading-3" style="margin-bottom: 16px;">04 PAYMENT METHOD</h3>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-              <label class="flex justify-between items-center" style="padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer;">
-                <div class="flex items-center gap-md">
-                  <input type="radio" name="payment-opt" value="Cash on Delivery" checked />
-                  <div>
-                    <strong>Cash on Delivery (COD)</strong><br>
-                    <span style="font-size: 0.75rem; color: var(--color-muted);">Pay cash when parcel arrives at your doorstep</span>
-                  </div>
-                </div>
-                <i class="fa-solid fa-money-bill-wave text-gold"></i>
-              </label>
-
-              <label class="flex justify-between items-center" style="padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer;">
-                <div class="flex items-center gap-md">
-                  <input type="radio" name="payment-opt" value="Credit/Debit Card" />
-                  <div>
-                    <strong>Credit / Debit Card</strong><br>
-                    <span style="font-size: 0.75rem; color: var(--color-muted);">Visa, MasterCard, UnionPay</span>
-                  </div>
-                </div>
-                <i class="fa-solid fa-credit-card text-gold"></i>
-              </label>
-
-              <label class="flex justify-between items-center" style="padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer;">
-                <div class="flex items-center gap-md">
-                  <input type="radio" name="payment-opt" value="JazzCash / Easypaisa" />
-                  <div>
-                    <strong>JazzCash / Easypaisa Wallet</strong><br>
-                    <span style="font-size: 0.75rem; color: var(--color-muted);">Instant mobile payment verification</span>
-                  </div>
-                </div>
-                <i class="fa-solid fa-mobile-screen-button text-gold"></i>
-              </label>
             </div>
           </div>
         </div>
 
-        <!-- Right: Order Summary -->
-        <div style="background-color: #FFFFFF; padding: 24px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); position: sticky; top: 100px;">
-          <h3 class="font-serif heading-3" style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--color-border-light);">ORDER SUMMARY</h3>
-
-          <!-- Items list -->
-          <div style="max-height: 240px; overflow-y: auto; margin-bottom: 20px;">
-            ${store.cart
-              .map(
-                (item) => `
-              <div class="flex gap-md" style="margin-bottom: 12px;">
-                <img src="${item.product.primaryImage}" style="width: 50px; height: 60px; object-fit: cover; border-radius: var(--radius-sm);" />
-                <div style="flex: 1; font-size: 0.8rem;">
-                  <div style="font-weight: 600;">${item.product.name}</div>
-                  <div style="color: var(--color-muted);">Qty: ${item.quantity} | Size: ${item.selectedSize}</div>
-                  <div style="font-weight: 700; margin-top: 2px;">Rs. ${(item.product.price * item.quantity).toLocaleString()}</div>
-                </div>
-              </div>
-            `
-              )
-              .join('')}
-          </div>
-
-          <div class="cart-summary-row">
-            <span>Subtotal</span>
-            <span>Rs. ${subtotal.toLocaleString()}</span>
-          </div>
-          ${
-            discount > 0
-              ? `
-            <div class="cart-summary-row text-gold">
-              <span>Discount</span>
-              <span>- Rs. ${discount.toLocaleString()}</span>
-            </div>
-          `
-              : ''
-          }
-          <div class="cart-summary-row">
-            <span>Shipping</span>
-            <span>${shipping === 0 ? '<strong class="text-gold">FREE</strong>' : `Rs. ${shipping.toLocaleString()}`}</span>
-          </div>
-
-          <div class="cart-summary-row cart-total-row">
-            <span>Grand Total</span>
-            <span class="text-gold">Rs. ${total.toLocaleString()}</span>
-          </div>
-
-          <button class="btn btn-primary btn-full" id="place-order-btn" style="margin-top: 16px; height: 50px;">
-            PLACE ORDER NOW
-          </button>
-        </div>
       </div>
     </div>
   `;
