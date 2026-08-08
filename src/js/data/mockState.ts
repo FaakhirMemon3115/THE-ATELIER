@@ -1,6 +1,6 @@
 import { db } from './db';
 import type { Product } from './products';
-import type { Order, Coupon, User, HeroBannerConfig } from './db';
+import type { Order, Coupon, User, HeroBannerConfig } from './types';
 
 export type { Product, Order, Coupon, User, HeroBannerConfig };
 
