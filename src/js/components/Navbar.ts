@@ -3,20 +3,18 @@ import { store } from '../data/mockState';
 export function renderNavbar(): string {
   const cartCount = store.cart.reduce((sum, item) => sum + item.quantity, 0);
   const wishlistCount = store.wishlist.length;
+  const user = store.currentUser;
 
   return `
     <!-- Announcement Bar -->
     <div class="announcement-bar">
-      <span>
-        <i class="fa-solid fa-crown gold-accent"></i>
-        <span>COMPLIMENTARY EXPRESS SHIPPING ON ORDERS ABOVE <strong class="gold-accent">RS. 5,000</strong></span>
-        <span class="mx-2">|</span>
-        <span>USE CODE <strong class="gold-accent">ATELIER10</strong> FOR 10% OFF</span>
-      </span>
+      <div class="container announcement-text">
+        <i class="fa-solid fa-truck-fast"></i> COMPLIMENTARY EXPRESS DELIVERY ON ALL ORDERS ABOVE RS. 5,000 &bull; PRIVATE SS26 PREVIEW
+      </div>
     </div>
 
-    <!-- Main Header -->
-    <header class="site-header">
+    <!-- Main Navigation Header -->
+    <header class="site-header" id="site-header">
       <div class="container header-inner">
         <!-- Logo -->
         <a href="#" class="brand-logo" data-route="home">
@@ -24,71 +22,66 @@ export function renderNavbar(): string {
         </a>
 
         <!-- Navigation Menu -->
-        <nav>
-          <ul class="nav-menu">
-            <li><a href="#" class="nav-link ${store.activeRoute === 'home' ? 'active' : ''}" data-route="home">Home</a></li>
-            <li><a href="#" class="nav-link ${store.activeRoute === 'shop' ? 'active' : ''}" data-route="shop">New Arrivals</a></li>
-            <li><a href="#" class="nav-link" data-route="shop" data-cat="Clothing">Clothing</a></li>
-            <li><a href="#" class="nav-link" data-route="shop" data-cat="Bags">Bags</a></li>
-            <li><a href="#" class="nav-link" data-route="shop" data-cat="Footwear">Shoes</a></li>
-            <li><a href="#" class="nav-link" data-route="shop" data-cat="Accessories">Accessories</a></li>
-            <li><a href="#" class="nav-link sale-link" data-route="shop" data-sale="true">Sale 50% Off</a></li>
-          </ul>
+        <nav class="nav-menu">
+          <a href="#" class="nav-link ${store.activeRoute === 'home' ? 'active' : ''}" data-route="home">HOME</a>
+          <a href="#" class="nav-link ${store.activeRoute === 'shop' ? 'active' : ''}" data-route="shop" data-cat="ALL">NEW ARRIVALS</a>
+          <a href="#" class="nav-link" data-route="shop" data-cat="Clothing">CLOTHING</a>
+          <a href="#" class="nav-link" data-route="shop" data-cat="Bags">BAGS</a>
+          <a href="#" class="nav-link" data-route="shop" data-cat="Footwear">SHOES</a>
+          <a href="#" class="nav-link" data-route="shop" data-cat="Accessories">ACCESSORIES</a>
+          <a href="#" class="nav-link text-sale" data-route="shop" data-cat="ALL">SALE 50% OFF</a>
+          ${
+            user?.role === 'ADMIN'
+              ? `<a href="#" class="nav-link ${store.activeRoute === 'admin' ? 'active' : ''}" data-route="admin" style="color: var(--color-gold); font-weight: 700;"><i class="fa-solid fa-user-shield"></i> ADMIN DASHBOARD</a>`
+              : ''
+          }
         </nav>
 
         <!-- Header Actions -->
         <div class="header-actions">
-          <button class="action-btn" id="search-trigger-btn" title="Search">
+          <!-- Search Trigger -->
+          <button class="header-action-btn" id="open-search-btn" title="Search Atelier Catalog">
             <i class="fa-solid fa-magnifying-glass"></i>
           </button>
 
-          <button class="action-btn" id="dna-quiz-btn" title="Style DNA Quiz">
-            <i class="fa-solid fa-wand-magic-sparkles text-gold"></i>
-          </button>
-
-          <button class="action-btn" id="wishlist-btn" title="Wishlist" data-route="account" data-tab="wishlist">
+          <!-- Wishlist Toggle -->
+          <button class="header-action-btn ${store.activeRoute === 'account' ? 'active' : ''}" id="open-wishlist-btn" title="Wishlist">
             <i class="fa-regular fa-heart"></i>
-            ${wishlistCount > 0 ? `<span class="badge-count">${wishlistCount}</span>` : ''}
+            ${wishlistCount > 0 ? `<span class="cart-badge">${wishlistCount}</span>` : ''}
           </button>
 
-          <button class="action-btn" id="cart-drawer-trigger" title="Cart Bag">
+          <!-- Cart Drawer Toggle -->
+          <button class="header-action-btn" id="open-cart-btn" title="Shopping Cart">
             <i class="fa-solid fa-bag-shopping"></i>
-            ${cartCount > 0 ? `<span class="badge-count">${cartCount}</span>` : ''}
+            ${cartCount > 0 ? `<span class="cart-badge">${cartCount}</span>` : ''}
           </button>
 
-          <button class="action-btn" id="account-btn" title="Account" data-route="account">
-            <i class="fa-regular fa-user"></i>
-          </button>
+          <!-- User Account / Auth Trigger -->
+          ${
+            user
+              ? `
+            <div class="flex items-center gap-xs" style="position: relative;">
+              <button class="header-action-btn" id="user-menu-btn" title="${user.name}">
+                <i class="fa-solid fa-user-check" style="color: var(--color-gold);"></i>
+              </button>
+              <button id="logout-btn" title="Sign Out" style="font-size: 0.75rem; color: var(--color-muted); background: none; border: none; cursor: pointer; padding: 4px;">
+                <i class="fa-solid fa-right-from-bracket"></i>
+              </button>
+            </div>
+          `
+              : `
+            <button class="header-action-btn" id="open-auth-btn" title="Sign In / Register">
+              <i class="fa-regular fa-user"></i>
+            </button>
+          `
+          }
 
-          <button class="action-btn text-gold" id="admin-btn" title="Admin Panel" data-route="admin">
-            <i class="fa-solid fa-sliders"></i>
+          <!-- Mobile Hamburger -->
+          <button class="header-action-btn mobile-toggle" id="mobile-menu-btn">
+            <i class="fa-solid fa-bars"></i>
           </button>
         </div>
       </div>
     </header>
-
-    <!-- Mobile Sticky Bottom Navigation Bar -->
-    <div class="mobile-bottom-nav">
-      <a href="#" class="mobile-nav-item ${store.activeRoute === 'home' ? 'active' : ''}" data-route="home">
-        <i class="fa-solid fa-house"></i>
-        <span>Home</span>
-      </a>
-      <a href="#" class="mobile-nav-item ${store.activeRoute === 'shop' ? 'active' : ''}" data-route="shop">
-        <i class="fa-solid fa-compass"></i>
-        <span>Shop</span>
-      </a>
-      <a href="#" class="mobile-nav-item" id="mobile-search-btn">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <span>Search</span>
-      </a>
-      <a href="#" class="mobile-nav-item" data-route="account" data-tab="wishlist">
-        <i class="fa-regular fa-heart"></i>
-        <span>Wishlist (${wishlistCount})</span>
-      </a>
-      <a href="#" class="mobile-nav-item" data-route="account">
-        <i class="fa-regular fa-user"></i>
-        <span>Account</span>
-      </a>
-    </div>
   `;
 }
