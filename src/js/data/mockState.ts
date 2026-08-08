@@ -355,7 +355,7 @@ class Store {
       this.appliedCoupon = null;
     }
 
-    newOrder.items.forEach((item) => {
+    newOrder.items.forEach((item: Order['items'][number]) => {
       const prod = db.getProductById(item.productId);
       if (prod) {
         prod.stock = Math.max(0, prod.stock - item.quantity);
