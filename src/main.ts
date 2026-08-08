@@ -50,7 +50,7 @@ function renderApp() {
   // 2. Assemble Full Page Shell
   appEl.innerHTML = `
     ${renderNavbar()}
-    <main>${mainContent}</main>
+    <main class="fade-in">${mainContent}</main>
 
     <!-- Footer (omitted on checkout for distraction-free flow) -->
     ${
@@ -150,7 +150,8 @@ function renderApp() {
 
   // 5. Hide Brand Reveal Intro Loader after initial view
   const brandLoader = document.getElementById('brand-loader');
-  if (brandLoader) {
+  if (brandLoader && !hasBrandLoaded) {
+    hasBrandLoaded = true;
     setTimeout(() => {
       brandLoader.classList.add('fade-out');
       setTimeout(() => brandLoader.remove(), 800);
