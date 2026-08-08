@@ -1,4 +1,5 @@
 import { store } from '../data/mockState';
+import type { Order } from '../data/types';
 
 export function renderAdminPage(activeTab = 'dashboard'): string {
   const products = store.products;
@@ -19,7 +20,7 @@ export function renderAdminPage(activeTab = 'dashboard'): string {
   const salesMap: Record<string, { name: string; sold: number; revenue: number; image: string }> = {};
   orders.forEach((o) => {
     if (o.status !== 'Cancelled') {
-      o.items.forEach((item) => {
+      o.items.forEach((item: Order['items'][number]) => {
         if (!salesMap[item.productId]) {
           salesMap[item.productId] = { name: item.productName, sold: 0, revenue: 0, image: item.image };
         }
