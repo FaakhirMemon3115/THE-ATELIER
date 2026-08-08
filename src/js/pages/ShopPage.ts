@@ -60,7 +60,7 @@ export function renderShopPage(
   } else if (filterState.sortBy === 'BEST RATED') {
     filtered.sort((a, b) => b.rating - a.rating);
   } else if (filterState.sortBy === 'NEWEST ARRIVALS') {
-    filtered.sort((a, b) => (b.badge === 'NEW' ? 1 : -1));
+    filtered.sort((_, b) => (b.badge === 'NEW' ? 1 : -1));
   }
 
   const sizesList = ['XS', 'S', 'M', 'L', 'XL'];
