@@ -1,4 +1,3 @@
-import { store } from '../data/mockState';
 
 export function renderAuthModal(activeTab: 'login' | 'register' = 'login'): string {
   return `
