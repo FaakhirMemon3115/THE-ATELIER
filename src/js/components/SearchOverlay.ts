@@ -1,4 +1,5 @@
-import { PRODUCTS_DATA, Product } from '../data/products';
+import { PRODUCTS_DATA } from '../data/products';
+import type { Product } from '../data/products';
 
 export function renderSearchOverlay(query = ''): string {
   const filteredProducts: Product[] = query.trim()

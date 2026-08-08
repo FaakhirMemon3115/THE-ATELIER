@@ -1,4 +1,5 @@
-import { PRODUCTS_DATA, Product } from './products';
+import { PRODUCTS_DATA } from './products';
+import type { Product } from './products';
 
 export interface CartItem {
   id: string; // unique cart item key

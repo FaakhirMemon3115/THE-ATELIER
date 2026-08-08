@@ -1,4 +1,4 @@
-import { Product } from '../data/products';
+import type { Product } from '../data/products';
 import { store } from '../data/mockState';
 
 export function renderProductCard(product: Product): string {
