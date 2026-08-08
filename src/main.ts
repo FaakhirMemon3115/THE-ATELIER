@@ -1,51 +1,83 @@
 import './style.css';
 import { store } from './js/data/mockState';
-import { PRODUCTS_DATA } from './js/data/products';
+import type { Product, Order } from './js/data/mockState';
 import { renderNavbar } from './js/components/Navbar';
 import { renderCartDrawer } from './js/components/CartDrawer';
 import { renderProductModal } from './js/components/ProductModal';
 import { renderStyleDNAQuizModal } from './js/components/StyleDNAQuiz';
 import { renderSearchOverlay } from './js/components/SearchOverlay';
+import { renderAuthModal, validatePassword } from './js/components/AuthModal';
 import { renderHomePage } from './js/pages/Home';
-import { renderShopPage } from './js/pages/ShopPage';
+import { renderShopPage, FilterState } from './js/pages/ShopPage';
 import { renderCheckoutPage } from './js/pages/CheckoutPage';
 import { renderAccountPage } from './js/pages/AccountPage';
 import { renderAdminPage } from './js/pages/AdminPage';
 
-// Local UI state flags
+// Local UI State flags
 let isCartOpen = false;
 let isSearchOpen = false;
 let searchQuery = '';
 let isQuizOpen = false;
 let quizStep = 0;
 let quizAnswers: string[] = [];
+
+let isAuthModalOpen = false;
+let authActiveTab: 'login' | 'register' = 'login';
+
 let accountTab = 'orders';
 let adminTab = 'dashboard';
-let confirmedOrderData: any = null;
-let currentShopCategory = 'ALL';
+let confirmedOrderData: Order | null = null;
 let hasBrandLoaded = false;
 
-// Builder state
-let builderSelected: Record<string, string> = {
-  Clothing: 'prod-001',
-  Bags: 'prod-003'
+// Shop filter state
+let shopFilterState: FilterState = {
+  category: 'ALL',
+  selectedSizes: [],
+  selectedColors: [],
+  maxPrice: 15000,
+  sortBy: 'FEATURED EDIT'
 };
+
+function showToast(message: string, icon = 'fa-circle-check') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
 
 function renderApp() {
   const appEl = document.querySelector<HTMLDivElement>('#app')!;
 
-  // 1. Determine main content based on route
+  // 1. Determine main content based on active route
   let mainContent = '';
   if (store.activeRoute === 'home') {
     mainContent = renderHomePage(!hasBrandLoaded);
   } else if (store.activeRoute === 'shop') {
-    mainContent = renderShopPage(currentShopCategory);
+    mainContent = renderShopPage(shopFilterState);
   } else if (store.activeRoute === 'checkout') {
     mainContent = renderCheckoutPage(confirmedOrderData);
   } else if (store.activeRoute === 'account') {
     mainContent = renderAccountPage(accountTab);
   } else if (store.activeRoute === 'admin') {
-    mainContent = renderAdminPage(adminTab);
+    // Only render admin page if authenticated as ADMIN
+    if (store.currentUser?.role === 'ADMIN') {
+      mainContent = renderAdminPage(adminTab);
+    } else {
+      store.navigateTo('home');
+      isAuthModalOpen = true;
+      authActiveTab = 'login';
+      showToast('Admin login required.', 'fa-triangle-exclamation');
+      return;
+    }
   }
 
   // 2. Assemble Full Page Shell
@@ -88,7 +120,6 @@ function renderApp() {
                 <li><a href="#" data-route="home">Our Story</a></li>
                 <li><a href="#" data-route="home">Journal & Craft</a></li>
                 <li><a href="#" data-route="home">Archive Collection</a></li>
-                <li><a href="#" data-route="account">Style DNA Quiz</a></li>
               </ul>
             </div>
 
@@ -96,7 +127,7 @@ function renderApp() {
               <div class="footer-col-title">CLIENT CARE</div>
               <ul class="footer-links">
                 <li><a href="#" id="footer-size-guide-btn">Size Guide</a></li>
-                <li><a href="#" data-route="account">Track Order</a></li>
+                <li><a href="#" data-route="account" data-tab="orders">Track Order</a></li>
                 <li><a href="#">Shipping & Returns</a></li>
                 <li><a href="#">FAQ & Support</a></li>
               </ul>
@@ -133,12 +164,13 @@ function renderApp() {
     ${store.selectedProductForModal ? renderProductModal() : ''}
     ${isQuizOpen ? renderStyleDNAQuizModal(quizStep, quizAnswers) : ''}
     ${isSearchOpen ? renderSearchOverlay(searchQuery) : ''}
+    ${isAuthModalOpen ? renderAuthModal(authActiveTab) : ''}
 
-    <!-- Toast Notifications Container -->
+    <!-- Toast Container -->
     <div id="toast-container" class="toast-container"></div>
   `;
 
-  // 3. Update Cart & Search Drawer classes
+  // Update Cart Drawer state
   const cartDrawer = document.getElementById('cart-drawer');
   const cartOverlay = document.getElementById('cart-overlay');
   if (cartDrawer && cartOverlay && isCartOpen) {
@@ -146,10 +178,10 @@ function renderApp() {
     cartOverlay.classList.add('active');
   }
 
-  // 4. Attach Event Handlers
+  // Attach Event Handlers
   attachEventHandlers();
 
-  // 5. Hide Brand Reveal Intro Loader after initial view
+  // Hide Intro Loader after initial load
   const brandLoader = document.getElementById('brand-loader');
   if (brandLoader && !hasBrandLoaded) {
     hasBrandLoaded = true;
@@ -169,338 +201,527 @@ function attachEventHandlers() {
       const targetCat = el.getAttribute('data-cat');
       const targetTab = el.getAttribute('data-tab');
 
-      if (targetCat) currentShopCategory = targetCat;
+      if (targetCat) shopFilterState.category = targetCat;
       if (targetTab) accountTab = targetTab;
+
+      // Gate account & checkout if not logged in
+      if ((targetRoute === 'account' || targetRoute === 'checkout') && !store.currentUser) {
+        isAuthModalOpen = true;
+        authActiveTab = 'login';
+        showToast('Please sign in or create an account first.', 'fa-user-lock');
+        renderApp();
+        return;
+      }
 
       store.navigateTo(targetRoute);
     });
   });
 
-  // Cart Drawer Triggers
-  document.getElementById('cart-drawer-trigger')?.addEventListener('click', () => {
-    isCartOpen = true;
-    renderApp();
-  });
-
-  document.getElementById('close-cart-btn')?.addEventListener('click', () => {
-    isCartOpen = false;
-    renderApp();
-  });
-
-  document.getElementById('cart-overlay')?.addEventListener('click', () => {
-    isCartOpen = false;
-    renderApp();
-  });
-
-  document.getElementById('drawer-shop-now-btn')?.addEventListener('click', () => {
-    isCartOpen = false;
-    store.navigateTo('shop');
-  });
-
-  // Cart Actions (+, -, Remove)
-  document.querySelectorAll('[data-cart-action]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const action = btn.getAttribute('data-cart-action');
-      const itemId = btn.getAttribute('data-item-id')!;
-      if (action === 'inc') store.updateCartQuantity(itemId, 1);
-      if (action === 'dec') store.updateCartQuantity(itemId, -1);
-      if (action === 'remove') store.removeFromCart(itemId);
-    });
-  });
-
-  // Coupon application
-  document.getElementById('apply-coupon-btn')?.addEventListener('click', () => {
-    const input = document.getElementById('coupon-input-code') as HTMLInputElement;
-    if (input && input.value) {
-      const success = store.applyCouponCode(input.value);
-      if (!success) store.showToast('Invalid coupon code. Try ATELIER10');
-    }
-  });
-
-  document.getElementById('proceed-checkout-btn')?.addEventListener('click', () => {
-    isCartOpen = false;
-    confirmedOrderData = null;
-    store.navigateTo('checkout');
-  });
-
-  // Product Card Click (Open detail modal)
-  document.querySelectorAll('[data-action="open-detail"]').forEach((el) => {
-    el.addEventListener('click', () => {
-      const pId = el.getAttribute('data-product-id');
-      const product = PRODUCTS_DATA.find((p) => p.id === pId);
-      if (product) store.openProductModal(product);
-    });
-  });
-
-  // Wishlist Toggle
-  document.querySelectorAll('[data-action="wishlist"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const pId = btn.getAttribute('data-product-id')!;
-      store.toggleWishlist(pId);
-    });
-  });
-
-  // Product Modal Controls
-  document.getElementById('close-modal-btn')?.addEventListener('click', () => {
-    store.closeProductModal();
-  });
-
-  document.getElementById('product-modal-overlay')?.addEventListener('click', (e) => {
-    if (e.target === document.getElementById('product-modal-overlay')) {
-      store.closeProductModal();
-    }
-  });
-
-  // Modal Image Thumbnail Swapper
-  document.querySelectorAll('.thumb-img').forEach((thumb) => {
-    thumb.addEventListener('click', () => {
-      const src = thumb.getAttribute('data-thumb');
-      const mainImg = document.getElementById('modal-main-image') as HTMLImageElement;
-      if (mainImg && src) {
-        mainImg.src = src;
-        document.querySelectorAll('.thumb-img').forEach((t) => t.classList.remove('active'));
-        thumb.classList.add('active');
-      }
-    });
-  });
-
-  // Modal Color Swatch & Size Chips
-  document.querySelectorAll('.color-swatch').forEach((swatch) => {
-    swatch.addEventListener('click', () => {
-      document.querySelectorAll('.color-swatch').forEach((s) => s.classList.remove('selected'));
-      swatch.classList.add('selected');
-      const colorName = swatch.getAttribute('data-color');
-      const colorImg = swatch.getAttribute('data-color-image');
-      const label = document.getElementById('selected-color-label');
-      if (label && colorName) label.textContent = colorName;
-
-      // Update main product modal image to selected color image with smooth transition
-      const mainImg = document.getElementById('modal-main-image') as HTMLImageElement;
-      if (mainImg && colorImg) {
-        mainImg.style.transition = 'opacity 0.2s ease-in-out';
-        mainImg.style.opacity = '0.3';
-        setTimeout(() => {
-          mainImg.src = colorImg;
-          mainImg.style.opacity = '1';
-        }, 150);
-      }
-    });
-  });
-
-  document.querySelectorAll('#modal-size-chips .size-chip').forEach((chip) => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('#modal-size-chips .size-chip').forEach((s) => s.classList.remove('selected'));
-      chip.classList.add('selected');
-    });
-  });
-
-  // Modal Qty
-  let modalQty = 1;
-  document.getElementById('modal-qty-plus')?.addEventListener('click', () => {
-    modalQty++;
-    const el = document.getElementById('modal-qty-val');
-    if (el) el.textContent = String(modalQty);
-  });
-  document.getElementById('modal-qty-minus')?.addEventListener('click', () => {
-    if (modalQty > 1) modalQty--;
-    const el = document.getElementById('modal-qty-val');
-    if (el) el.textContent = String(modalQty);
-  });
-
-  document.getElementById('modal-add-to-cart-btn')?.addEventListener('click', () => {
-    if (store.selectedProductForModal) {
-      const selectedSizeEl = document.querySelector('#modal-size-chips .size-chip.selected');
-      const selectedSize = selectedSizeEl ? selectedSizeEl.textContent! : 'M';
-      const selectedColorLabel = document.getElementById('selected-color-label')?.textContent || 'Default';
-
-      store.addToCart(store.selectedProductForModal, modalQty, selectedSize, selectedColorLabel);
-      store.closeProductModal();
-      isCartOpen = true;
-      renderApp();
-    }
-  });
-
-  // Index Magazine Hover Preview
-  document.querySelectorAll('.index-item').forEach((item) => {
-    item.addEventListener('mouseenter', () => {
-      const idx = item.getAttribute('data-preview');
-      document.querySelectorAll('.index-preview-img').forEach((img) => img.classList.remove('active'));
-      document.getElementById(`idx-img-${idx}`)?.classList.add('active');
-    });
-  });
-
-  // Add Complete Look Bundle Button
-  document.getElementById('add-complete-look-btn')?.addEventListener('click', () => {
-    store.addToCart(PRODUCTS_DATA[0], 1, 'M', 'Noir Black');
-    store.addToCart(PRODUCTS_DATA[2], 1, 'One Size', 'Champagne Gold');
-    store.addToCart(PRODUCTS_DATA[3], 1, '38', 'Gold');
-    isCartOpen = true;
-    renderApp();
-  });
-
-  // Mood Switcher Buttons
-  document.querySelectorAll('.mood-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      store.activeMood = btn.getAttribute('data-mood') as any;
-      renderApp();
-    });
-  });
-
-  // Day/Night Slider
-  const slider = document.getElementById('day-night-slider') as HTMLInputElement;
-  if (slider) {
-    slider.addEventListener('input', () => {
-      store.dayNightTime = parseInt(slider.value, 10);
+  // Auth Button (Navbar)
+  const openAuthBtn = document.getElementById('open-auth-btn');
+  if (openAuthBtn) {
+    openAuthBtn.addEventListener('click', () => {
+      isAuthModalOpen = true;
+      authActiveTab = 'login';
       renderApp();
     });
   }
 
-  // Look Builder Interaction
-  document.querySelectorAll('.builder-item-card').forEach((card) => {
-    card.addEventListener('click', () => {
-      const pId = card.getAttribute('data-builder-product-id')!;
-      const prod = PRODUCTS_DATA.find((p) => p.id === pId);
-      if (prod) {
-        builderSelected[prod.category] = prod.id;
-        store.showToast(`Updated styled look with "${prod.name}"`);
+  // Logout Buttons
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      store.logout();
+      showToast('Signed out of Atelier session.');
+    });
+  }
+
+  const accountLogoutBtn = document.getElementById('account-logout-btn');
+  if (accountLogoutBtn) {
+    accountLogoutBtn.addEventListener('click', () => {
+      store.logout();
+      showToast('Signed out of Atelier session.');
+    });
+  }
+
+  // Close Auth Modal
+  const closeAuthBtn = document.getElementById('close-auth-modal-btn');
+  if (closeAuthBtn) {
+    closeAuthBtn.addEventListener('click', () => {
+      isAuthModalOpen = false;
+      renderApp();
+    });
+  }
+
+  // Auth Tabs
+  const authTabLogin = document.getElementById('auth-tab-login');
+  if (authTabLogin) {
+    authTabLogin.addEventListener('click', () => {
+      authActiveTab = 'login';
+      renderApp();
+    });
+  }
+
+  const authTabRegister = document.getElementById('auth-tab-register');
+  if (authTabRegister) {
+    authTabRegister.addEventListener('click', () => {
+      authActiveTab = 'register';
+      renderApp();
+    });
+  }
+
+  // Login Form Submission
+  const loginForm = document.getElementById('auth-login-form') as HTMLFormElement;
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = (document.getElementById('login-email') as HTMLInputElement).value.trim();
+      const password = (document.getElementById('login-password') as HTMLInputElement).value.trim();
+
+      // Check Default Admin Credentials
+      if (email.toLowerCase() === 'atif@admin.com' && password === 'atif@access.com') {
+        store.login('atif@admin.com', 'ADMIN', 'Atelier Administrator');
+        isAuthModalOpen = false;
+        showToast('Admin authenticated successfully! Opening Dashboard...', 'fa-user-shield');
+        store.navigateTo('admin');
+        return;
+      }
+
+      // Regular User Login
+      if (email && password) {
+        store.login(email, 'USER', email.split('@')[0]);
+        isAuthModalOpen = false;
+        showToast(`Welcome back, ${store.currentUser?.name}!`);
+        renderApp();
+      }
+    });
+  }
+
+  // Registration Form Submission (With Password Validation)
+  const registerForm = document.getElementById('auth-register-form') as HTMLFormElement;
+  if (registerForm) {
+    registerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = (document.getElementById('reg-name') as HTMLInputElement).value.trim();
+      const email = (document.getElementById('reg-email') as HTMLInputElement).value.trim();
+      const password = (document.getElementById('reg-password') as HTMLInputElement).value.trim();
+
+      const validation = validatePassword(password);
+      const alertBox = document.getElementById('auth-error-alert');
+
+      if (!validation.isValid) {
+        if (alertBox) {
+          alertBox.style.display = 'block';
+          alertBox.innerHTML = `<strong>Password Validation Failed:</strong><ul style="margin-top: 4px; padding-left: 16px;">${validation.errors.map((err) => `<li>${err}</li>`).join('')}</ul>`;
+        }
+        return;
+      }
+
+      store.login(email, 'USER', name);
+      isAuthModalOpen = false;
+      showToast(`Account created successfully. Welcome ${name}!`);
+      renderApp();
+    });
+  }
+
+  // Cart Drawer Toggles
+  const openCartBtn = document.getElementById('open-cart-btn');
+  const closeCartBtn = document.getElementById('close-cart-btn');
+  const cartOverlayEl = document.getElementById('cart-overlay');
+
+  if (openCartBtn) {
+    openCartBtn.addEventListener('click', () => {
+      isCartOpen = true;
+      renderApp();
+    });
+  }
+
+  if (closeCartBtn) {
+    closeCartBtn.addEventListener('click', () => {
+      isCartOpen = false;
+      renderApp();
+    });
+  }
+
+  if (cartOverlayEl) {
+    cartOverlayEl.addEventListener('click', () => {
+      isCartOpen = false;
+      renderApp();
+    });
+  }
+
+  // Cart Item Quantity Adjusters
+  document.querySelectorAll('.cart-qty-plus').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-cart-id');
+      if (id) store.updateCartQuantity(id, 1);
+    });
+  });
+
+  document.querySelectorAll('.cart-qty-minus').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-cart-id');
+      if (id) store.updateCartQuantity(id, -1);
+    });
+  });
+
+  document.querySelectorAll('.cart-remove-item').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-cart-id');
+      if (id) {
+        store.removeFromCart(id);
+        showToast('Item removed from Atelier bag.');
+      }
+    });
+  });
+
+  // Proceed to Checkout Button (Cart Drawer)
+  const proceedCheckoutBtn = document.getElementById('proceed-checkout-btn');
+  if (proceedCheckoutBtn) {
+    proceedCheckoutBtn.addEventListener('click', () => {
+      isCartOpen = false;
+      if (!store.currentUser) {
+        isAuthModalOpen = true;
+        authActiveTab = 'login';
+        showToast('Please sign in or create an account to checkout.', 'fa-user-lock');
+        renderApp();
+        return;
+      }
+      confirmedOrderData = null;
+      store.navigateTo('checkout');
+    });
+  }
+
+  // Product Card Quick Add & Wishlist & Modal Triggers
+  document.querySelectorAll('.product-card').forEach((card) => {
+    const prodId = card.getAttribute('data-prod-id');
+    const product = store.products.find((p) => p.id === prodId);
+
+    if (product) {
+      card.querySelectorAll('.product-img-wrap, .product-title').forEach((el) => {
+        el.addEventListener('click', () => store.openProductModal(product));
+      });
+
+      const addBtn = card.querySelector('.btn-quick-add');
+      if (addBtn) {
+        addBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          store.addToCart(product, 1);
+          showToast(`Added ${product.name} to Atelier bag!`);
+        });
+      }
+
+      const wishBtn = card.querySelector('.btn-wishlist');
+      if (wishBtn) {
+        wishBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!store.currentUser) {
+            isAuthModalOpen = true;
+            authActiveTab = 'login';
+            showToast('Please sign in to save items to your wishlist.', 'fa-user-lock');
+            renderApp();
+            return;
+          }
+          store.toggleWishlist(product.id);
+          const isWishlisted = store.wishlist.includes(product.id);
+          showToast(isWishlisted ? 'Saved to your Wishlist!' : 'Removed from Wishlist.');
+        });
+      }
+    }
+  });
+
+  // Modal Event Handlers
+  const closeModalBtn = document.getElementById('close-modal-btn');
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', () => store.closeProductModal());
+  }
+
+  const modalOverlay = document.getElementById('product-modal-overlay');
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) store.closeProductModal();
+    });
+  }
+
+  const modalAddCartBtn = document.getElementById('modal-add-to-cart-btn');
+  if (modalAddCartBtn && store.selectedProductForModal) {
+    modalAddCartBtn.addEventListener('click', () => {
+      const selectedSize = document.querySelector('#modal-size-chips .size-chip.selected')?.getAttribute('data-size') || 'S';
+      const selectedColor = document.querySelector('.color-swatch.selected')?.getAttribute('data-color') || 'Default';
+      const qtyVal = parseInt(document.getElementById('modal-qty-val')?.textContent || '1', 10);
+
+      store.addToCart(store.selectedProductForModal!, qtyVal, selectedSize, selectedColor);
+      store.closeProductModal();
+      isCartOpen = true;
+      showToast(`Added ${store.selectedProductForModal!.name} to bag!`);
+      renderApp();
+    });
+  }
+
+  // Shop Page Filters (Interactive Real-Time binding)
+  document.querySelectorAll('[data-filter-cat]').forEach((input) => {
+    input.addEventListener('change', (e) => {
+      const cat = (e.target as HTMLElement).getAttribute('data-filter-cat');
+      if (cat) {
+        shopFilterState.category = cat;
         renderApp();
       }
     });
   });
 
-  document.getElementById('builder-add-bundle-btn')?.addEventListener('click', () => {
-    Object.values(builderSelected).forEach((pId) => {
-      const p = PRODUCTS_DATA.find((prod) => prod.id === pId);
-      if (p) store.addToCart(p, 1);
-    });
-    isCartOpen = true;
-    renderApp();
-  });
-
-  // Style DNA Quiz Triggers
-  document.getElementById('dna-quiz-btn')?.addEventListener('click', () => {
-    isQuizOpen = true;
-    quizStep = 0;
-    quizAnswers = [];
-    renderApp();
-  });
-
-  document.getElementById('start-dna-quiz-cta')?.addEventListener('click', () => {
-    isQuizOpen = true;
-    quizStep = 0;
-    quizAnswers = [];
-    renderApp();
-  });
-
-  document.getElementById('close-quiz-btn')?.addEventListener('click', () => {
-    isQuizOpen = false;
-    renderApp();
-  });
-
-  document.querySelectorAll('.quiz-option-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const type = btn.getAttribute('data-quiz-type')!;
-      quizAnswers.push(type);
-      quizStep++;
-      renderApp();
+  document.querySelectorAll('#filter-size-chips .size-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const size = chip.getAttribute('data-filter-size');
+      if (size) {
+        if (shopFilterState.selectedSizes.includes(size)) {
+          shopFilterState.selectedSizes = shopFilterState.selectedSizes.filter((s) => s !== size);
+        } else {
+          shopFilterState.selectedSizes.push(size);
+        }
+        renderApp();
+      }
     });
   });
 
-  document.getElementById('view-dna-curated-btn')?.addEventListener('click', (e) => {
-    const mood = (e.currentTarget as HTMLElement).getAttribute('data-mood');
-    isQuizOpen = false;
-    if (mood) store.activeMood = mood as any;
-    store.navigateTo('home');
+  document.querySelectorAll('#filter-color-swatches .color-swatch').forEach((swatch) => {
+    swatch.addEventListener('click', () => {
+      const color = swatch.getAttribute('data-filter-color');
+      if (color) {
+        if (shopFilterState.selectedColors.includes(color)) {
+          shopFilterState.selectedColors = shopFilterState.selectedColors.filter((c) => c !== color);
+        } else {
+          shopFilterState.selectedColors.push(color);
+        }
+        renderApp();
+      }
+    });
   });
 
-  document.getElementById('save-dna-btn')?.addEventListener('click', () => {
-    isQuizOpen = false;
-    accountTab = 'dna';
-    store.navigateTo('account');
-    store.showToast('Saved Style DNA Profile to your account.');
-  });
-
-  // Search Overlay
-  document.getElementById('search-trigger-btn')?.addEventListener('click', () => {
-    isSearchOpen = true;
-    renderApp();
-  });
-
-  document.getElementById('mobile-search-btn')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    isSearchOpen = true;
-    renderApp();
-  });
-
-  document.getElementById('close-search-btn')?.addEventListener('click', () => {
-    isSearchOpen = false;
-    renderApp();
-  });
-
-  const searchInput = document.getElementById('live-search-input') as HTMLInputElement;
-  if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      searchQuery = searchInput.value;
+  const priceRangeInput = document.getElementById('filter-price-range') as HTMLInputElement;
+  if (priceRangeInput) {
+    priceRangeInput.addEventListener('input', () => {
+      shopFilterState.maxPrice = parseInt(priceRangeInput.value, 10);
       renderApp();
     });
   }
 
-  document.querySelectorAll('.search-tag-btn').forEach((tag) => {
-    tag.addEventListener('click', () => {
-      searchQuery = tag.getAttribute('data-tag') || '';
+  const sortSelect = document.getElementById('shop-sort-select') as HTMLSelectElement;
+  if (sortSelect) {
+    sortSelect.addEventListener('change', () => {
+      shopFilterState.sortBy = sortSelect.value;
       renderApp();
     });
-  });
+  }
 
-  // Checkout Actions
-  document.getElementById('place-order-btn')?.addEventListener('click', () => {
-    const nameEl = document.getElementById('chk-name') as HTMLInputElement;
-    const emailEl = document.getElementById('chk-email') as HTMLInputElement;
-    const phoneEl = document.getElementById('chk-phone') as HTMLInputElement;
-    const addressEl = document.getElementById('chk-address') as HTMLInputElement;
-    const cityEl = document.getElementById('chk-city') as HTMLSelectElement;
-    const paymentOptEl = document.querySelector('input[name="payment-opt"]:checked') as HTMLInputElement;
-
-    const newOrder = store.placeOrder({
-      customerName: nameEl?.value || 'Ayesha Khan',
-      email: emailEl?.value || 'ayesha.khan@atelier.com',
-      phone: phoneEl?.value || '+92 300 1234567',
-      address: addressEl?.value || 'Penthouse 14B, Ocean Towers',
-      city: cityEl?.value || 'Karachi',
-      paymentMethod: paymentOptEl?.value || 'Cash on Delivery'
+  const resetFiltersBtn = document.getElementById('reset-filters-btn');
+  if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener('click', () => {
+      shopFilterState = {
+        category: 'ALL',
+        selectedSizes: [],
+        selectedColors: [],
+        maxPrice: 15000,
+        sortBy: 'FEATURED EDIT'
+      };
+      renderApp();
     });
+  }
 
-    confirmedOrderData = newOrder;
-    renderApp();
-  });
+  // Coupon Application (Single-Use Rule)
+  const couponForm = document.getElementById('coupon-form') as HTMLFormElement;
+  if (couponForm) {
+    couponForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const codeInput = document.getElementById('coupon-code-input') as HTMLInputElement;
+      if (codeInput) {
+        const res = store.applyCoupon(codeInput.value);
+        showToast(res.message, res.success ? 'fa-circle-check' : 'fa-triangle-exclamation');
+        renderApp();
+      }
+    });
+  }
 
-  // Account Tabs
-  document.querySelectorAll('.account-nav-btn').forEach((btn) => {
+  const removeCouponBtn = document.getElementById('remove-coupon-btn');
+  if (removeCouponBtn) {
+    removeCouponBtn.addEventListener('click', () => {
+      store.removeCoupon();
+      showToast('Coupon removed.');
+      renderApp();
+    });
+  }
+
+  // Checkout Form Submission (Place Order)
+  const checkoutForm = document.getElementById('checkout-form') as HTMLFormElement;
+  if (checkoutForm) {
+    checkoutForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = (document.getElementById('checkout-name') as HTMLInputElement).value.trim();
+      const email = (document.getElementById('checkout-email') as HTMLInputElement).value.trim();
+      const phone = (document.getElementById('checkout-phone') as HTMLInputElement).value.trim();
+      const address = (document.getElementById('checkout-address') as HTMLInputElement).value.trim();
+      const city = (document.getElementById('checkout-city') as HTMLInputElement).value.trim();
+
+      const orderItems = store.cart.map((ci) => ({
+        productId: ci.product.id,
+        productName: ci.product.name,
+        price: ci.product.price,
+        quantity: ci.quantity,
+        selectedSize: ci.selectedSize,
+        selectedColor: ci.selectedColor,
+        image: ci.product.primaryImage
+      }));
+
+      const subtotal = store.getCartSubtotal();
+      const discount = store.getDiscountAmount();
+      const shipping = store.getShippingFee();
+      const total = store.getCartTotal();
+
+      const newOrder = store.placeOrder({
+        customerName: name,
+        customerEmail: email,
+        items: orderItems,
+        subtotal,
+        discount,
+        shipping,
+        total,
+        paymentMethod: 'Cash on Delivery',
+        shippingAddress: `${address}, ${city} (Phone: ${phone})`
+      });
+
+      confirmedOrderData = newOrder;
+      showToast(`Order #${newOrder.id} successfully placed!`, 'fa-circle-check');
+      renderApp();
+    });
+  }
+
+  // Admin Panel Event Handlers
+  document.querySelectorAll('[data-admin-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      accountTab = btn.getAttribute('data-tab')!;
-      renderApp();
+      const tab = btn.getAttribute('data-admin-tab');
+      if (tab) {
+        adminTab = tab;
+        renderApp();
+      }
     });
   });
 
-  // Admin Tabs
-  document.querySelectorAll('.admin-nav-btn').forEach((btn) => {
+  const adminAddProdBtn = document.getElementById('admin-add-product-btn');
+  if (adminAddProdBtn) {
+    adminAddProdBtn.addEventListener('click', () => {
+      const name = prompt('Enter Product Name:', 'Silk Evening Robe');
+      if (!name) return;
+      const priceStr = prompt('Enter Product Price (Rs):', '8500');
+      if (!priceStr) return;
+      const category = (prompt('Enter Category (Clothing / Bags / Footwear / Accessories):', 'Clothing') || 'Clothing') as any;
+
+      const newProd: Product = {
+        id: `prod-${Date.now()}`,
+        sku: `ATL-NEW-${Math.floor(100 + Math.random() * 900)}`,
+        name,
+        category,
+        subcategory: 'Dresses',
+        price: parseInt(priceStr, 10),
+        rating: 5.0,
+        reviewsCount: 1,
+        primaryImage: '/images/hero_model.png',
+        secondaryImage: '/images/shop_look_model.png',
+        description: 'Exclusive haute couture piece newly crafted for Atelier catalog.',
+        material: 'Silk Georgette',
+        care: 'Dry clean only',
+        fit: 'Regular fit',
+        sizes: ['S', 'M', 'L'],
+        colors: [{ name: 'Ivory', hex: '#F8F5F0' }],
+        stock: 25,
+        mood: 'CONFIDENT',
+        isDay: true,
+        isNight: true
+      };
+
+      store.addProduct(newProd);
+      showToast(`Product "${name}" added to catalog!`);
+      renderApp();
+    });
+  }
+
+  document.querySelectorAll('.btn-del-prod').forEach((btn) => {
     btn.addEventListener('click', () => {
-      adminTab = btn.getAttribute('data-admin-tab')!;
-      renderApp();
+      const id = btn.getAttribute('data-prod-id');
+      if (id && confirm('Are you sure you want to delete this product from store?')) {
+        store.deleteProduct(id);
+        showToast('Product deleted from catalog.');
+        renderApp();
+      }
     });
   });
 
-  // Admin status update
-  document.querySelectorAll('.admin-status-select').forEach((sel) => {
-    sel.addEventListener('change', (e) => {
-      const orderId = sel.getAttribute('data-order-id')!;
-      const val = (e.target as HTMLSelectElement).value as any;
-      store.updateOrderStatus(orderId, val);
+  document.querySelectorAll('.btn-edit-prod').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-prod-id');
+      const prod = store.products.find((p) => p.id === id);
+      if (prod) {
+        const newPrice = prompt(`Edit Price for "${prod.name}":`, prod.price.toString());
+        const newStock = prompt(`Edit Stock Units for "${prod.name}":`, prod.stock.toString());
+        if (newPrice && newStock) {
+          prod.price = parseInt(newPrice, 10);
+          prod.stock = parseInt(newStock, 10);
+          store.updateProduct(prod);
+          showToast(`Updated "${prod.name}" price and stock.`);
+          renderApp();
+        }
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-restock').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-prod-id');
+      const prod = store.products.find((p) => p.id === id);
+      if (prod) {
+        prod.stock += 20;
+        store.updateProduct(prod);
+        showToast(`Added +20 stock units to ${prod.name}!`);
+        renderApp();
+      }
+    });
+  });
+
+  const addCouponForm = document.getElementById('add-coupon-form') as HTMLFormElement;
+  if (addCouponForm) {
+    addCouponForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const code = (document.getElementById('new-coupon-code') as HTMLInputElement).value.trim();
+      const discount = parseInt((document.getElementById('new-coupon-discount') as HTMLInputElement).value, 10);
+      if (code && discount) {
+        store.addCoupon(code, discount);
+        showToast(`Coupon code ${code} created successfully!`);
+        renderApp();
+      }
+    });
+  }
+
+  document.querySelectorAll('.btn-del-coupon').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const code = btn.getAttribute('data-code');
+      if (code) {
+        store.deleteCoupon(code);
+        showToast(`Coupon ${code} deleted.`);
+        renderApp();
+      }
+    });
+  });
+
+  document.querySelectorAll('.order-status-select').forEach((select) => {
+    select.addEventListener('change', (e) => {
+      const orderId = select.getAttribute('data-order-id');
+      const newStatus = (e.target as HTMLSelectElement).value as Order['status'];
+      if (orderId && newStatus) {
+        store.updateOrderStatus(orderId, newStatus);
+        showToast(`Order #${orderId} status changed to ${newStatus}.`);
+      }
     });
   });
 }
 
-// Initial App Mount & Store Subscription
-store.subscribe(renderApp);
+// Initial Subscribe & Render
+store.subscribe(() => renderApp());
 renderApp();
