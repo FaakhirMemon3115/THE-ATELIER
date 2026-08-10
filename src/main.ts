@@ -86,95 +86,104 @@ function renderApp() {
   }
 
   // 2. Assemble Full Page Shell
-  appEl.innerHTML = `
-    ${renderNavbar()}
-    <main class="fade-in">${mainContent}</main>
+  // Admin page is full-screen (no navbar/footer)
+  if (store.activeRoute === 'admin') {
+    appEl.innerHTML = `
+      <main class="fade-in">${mainContent}</main>
+      ${isAdminProdModalOpen ? renderAdminProductModal(editingAdminProduct) : ''}
+      <div id="toast-container" class="toast-container"></div>
+    `;
+  } else {
+    appEl.innerHTML = `
+      ${renderNavbar()}
+      <main class="fade-in">${mainContent}</main>
 
-    <!-- Footer -->
-    ${
-      store.activeRoute !== 'checkout'
-        ? `
-      <footer class="site-footer">
-        <div class="container">
-          <div class="footer-hero-statement">
-            <h2 class="footer-hero-title">THE ATELIER</h2>
-            <p class="footer-hero-tagline">Wear your story. Express your silhouette.</p>
-          </div>
-
-          <div class="footer-grid">
-            <div>
-              <div class="brand-logo" style="margin-bottom: 14px;"><img src="/assets/the-atelier-logo.svg" alt="THE ATELIER" style="height: 44px; width: auto; display: block; filter: brightness(0) invert(1) opacity(0.9);" /></div>
-              <p style="font-size: 0.85rem; color: #A0A0A0; max-width: 260px;">
-                Haute couture fashion brand bringing international luxury aesthetics to modern women.
-              </p>
+      <!-- Footer -->
+      ${
+        store.activeRoute !== 'checkout'
+          ? `
+        <footer class="site-footer">
+          <div class="container">
+            <div class="footer-hero-statement">
+              <h2 class="footer-hero-title">THE ATELIER</h2>
+              <p class="footer-hero-tagline">Wear your story. Express your silhouette.</p>
             </div>
 
-            <div>
-              <div class="footer-col-title">SHOP</div>
-              <ul class="footer-links">
-                <li><a href="#" data-route="shop" data-cat="Clothing">New Gowns & Dresses</a></li>
-                <li><a href="#" data-route="shop" data-cat="Bags">Leather Handbags</a></li>
-                <li><a href="#" data-route="shop" data-cat="Footwear">Stiletto Heels</a></li>
-                <li><a href="#" data-route="shop" data-cat="Accessories">Fine Jewelry</a></li>
-              </ul>
+            <div class="footer-grid">
+              <div>
+                <div class="brand-logo" style="margin-bottom: 14px;"><img src="/assets/the-atelier-logo.svg" alt="THE ATELIER" style="height: 44px; width: auto; display: block; filter: brightness(0) invert(1) opacity(0.9);" /></div>
+                <p style="font-size: 0.85rem; color: #A0A0A0; max-width: 260px;">
+                  Haute couture fashion brand bringing international luxury aesthetics to modern women.
+                </p>
+              </div>
+
+              <div>
+                <div class="footer-col-title">SHOP</div>
+                <ul class="footer-links">
+                  <li><a href="#" data-route="shop" data-cat="Clothing">New Gowns &amp; Dresses</a></li>
+                  <li><a href="#" data-route="shop" data-cat="Bags">Leather Handbags</a></li>
+                  <li><a href="#" data-route="shop" data-cat="Footwear">Stiletto Heels</a></li>
+                  <li><a href="#" data-route="shop" data-cat="Accessories">Fine Jewelry</a></li>
+                </ul>
+              </div>
+
+              <div>
+                <div class="footer-col-title">ATELIER</div>
+                <ul class="footer-links">
+                  <li><a href="#" data-route="home">Our Story</a></li>
+                  <li><a href="#" data-route="home">Journal &amp; Craft</a></li>
+                  <li><a href="#" data-route="home">Archive Collection</a></li>
+                </ul>
+              </div>
+
+              <div>
+                <div class="footer-col-title">CLIENT CARE</div>
+                <ul class="footer-links">
+                  <li><a href="#" id="footer-size-guide-btn">Size Guide</a></li>
+                  <li><a href="#" data-route="account" data-tab="orders">Track Order</a></li>
+                  <li><a href="#">Shipping &amp; Returns</a></li>
+                  <li><a href="#">FAQ &amp; Support</a></li>
+                </ul>
+              </div>
+
+              <div>
+                <div class="footer-col-title">JOIN THE ATELIER</div>
+                <p style="font-size: 0.8rem; color: #A0A0A0;">Receive private invitations to new season drops.</p>
+                <div class="newsletter-form">
+                  <input type="email" placeholder="Your email address..." class="newsletter-input" />
+                  <button class="btn btn-gold" style="padding: 10px 16px;">JOIN</button>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <div class="footer-col-title">ATELIER</div>
-              <ul class="footer-links">
-                <li><a href="#" data-route="home">Our Story</a></li>
-                <li><a href="#" data-route="home">Journal & Craft</a></li>
-                <li><a href="#" data-route="home">Archive Collection</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <div class="footer-col-title">CLIENT CARE</div>
-              <ul class="footer-links">
-                <li><a href="#" id="footer-size-guide-btn">Size Guide</a></li>
-                <li><a href="#" data-route="account" data-tab="orders">Track Order</a></li>
-                <li><a href="#">Shipping & Returns</a></li>
-                <li><a href="#">FAQ & Support</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <div class="footer-col-title">JOIN THE ATELIER</div>
-              <p style="font-size: 0.8rem; color: #A0A0A0;">Receive private invitations to new season drops.</p>
-              <div class="newsletter-form">
-                <input type="email" placeholder="Your email address..." class="newsletter-input" />
-                <button class="btn btn-gold" style="padding: 10px 16px;">JOIN</button>
+            <div class="footer-bottom">
+              <div>© 2026 THE ATELIER. All Rights Reserved.</div>
+              <div class="flex gap-lg">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms &amp; Conditions</a>
+                <a href="#">Instagram @TheAtelier</a>
               </div>
             </div>
           </div>
+        </footer>
+      `
+          : ''
+      }
 
-          <div class="footer-bottom">
-            <div>© 2026 THE ATELIER. All Rights Reserved.</div>
-            <div class="flex gap-lg">
-              <a href="#">Privacy Policy</a>
-              <a href="#">Terms & Conditions</a>
-              <a href="#">Instagram @TheAtelier</a>
-            </div>
-          </div>
-        </div>
-      </footer>
-    `
-        : ''
-    }
+      <!-- Cart Drawer -->
+      ${renderCartDrawer()}
 
-    <!-- Cart Drawer -->
-    ${renderCartDrawer()}
+      <!-- Modals -->
+      ${store.selectedProductForModal ? renderProductModal() : ''}
+      ${isQuizOpen ? renderStyleDNAQuizModal(quizStep, quizAnswers) : ''}
+      ${isSearchOpen ? renderSearchOverlay(searchQuery) : ''}
+      ${isAuthModalOpen ? renderAuthModal(authActiveTab) : ''}
+      ${isAdminProdModalOpen ? renderAdminProductModal(editingAdminProduct) : ''}
 
-    <!-- Modals -->
-    ${store.selectedProductForModal ? renderProductModal() : ''}
-    ${isQuizOpen ? renderStyleDNAQuizModal(quizStep, quizAnswers) : ''}
-    ${isSearchOpen ? renderSearchOverlay(searchQuery) : ''}
-    ${isAuthModalOpen ? renderAuthModal(authActiveTab) : ''}
-    ${isAdminProdModalOpen ? renderAdminProductModal(editingAdminProduct) : ''}
-
-    <!-- Toast Container -->
-    <div id="toast-container" class="toast-container"></div>
-  `;
+      <!-- Toast Container -->
+      <div id="toast-container" class="toast-container"></div>
+    `;
+  };
 
   // Update Cart Drawer state
   const cartDrawer = document.getElementById('cart-drawer');
