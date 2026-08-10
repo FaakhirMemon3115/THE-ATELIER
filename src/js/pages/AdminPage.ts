@@ -13,10 +13,9 @@ export function renderAdminPage(activeTab = 'dashboard'): string {
   const totalOrdersCount = orders.length;
   const activeCustomersCount = users.length;
   const totalProductsCount = products.length;
-
   const lowStockItems = store.getLowStockProducts();
 
-  // Top selling products computation
+  // Top selling products
   const salesMap: Record<string, { name: string; sold: number; revenue: number; image: string }> = {};
   orders.forEach((o) => {
     if (o.status !== 'Cancelled') {
@@ -29,72 +28,140 @@ export function renderAdminPage(activeTab = 'dashboard'): string {
       });
     }
   });
-
   const topSelling = Object.values(salesMap).sort((a, b) => b.sold - a.sold).slice(0, 5);
 
+  // Tab labels for topbar
+  const tabLabels: Record<string, string> = {
+    dashboard: 'Executive Overview',
+    products: 'Products Catalog',
+    users: 'Users Database',
+    orders: 'Orders Management',
+    coupons: 'Coupon Database',
+    hero: 'Hero Customizer',
+    stock: 'Stock Alerts',
+  };
+
+  const currentUser = store.currentUser;
+
   return `
-    <div class="admin-container" style="padding: var(--space-xl) 0 var(--space-3xl); background: #FAF9F6; min-height: 80vh;">
-      <div class="container">
-        
-        <!-- Header Console Top Bar -->
-        <div class="flex justify-between items-center" style="margin-bottom: 24px; border-bottom: 2px solid var(--color-gold); padding-bottom: 16px; background: #FFF; padding: 20px 24px; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);">
+    <div class="admin-page-wrapper">
+
+      <!-- ── SIDEBAR ──────────────────────────────────────────── -->
+      <aside class="admin-sidebar">
+
+        <!-- Brand -->
+        <div class="admin-sidebar-brand">
+          <span class="admin-sidebar-brand-logo">The Atelier</span>
+          <span class="admin-sidebar-brand-sub">Admin Console</span>
+        </div>
+
+        <!-- User Badge -->
+        <div class="admin-user-badge">
+          <img
+            class="admin-user-avatar"
+            src="${currentUser?.avatar || '/images/hero_model.png'}"
+            alt="${currentUser?.name}"
+          />
           <div>
-            <div class="subtitle" style="letter-spacing: 0.15em; color: var(--color-gold);"><i class="fa-solid fa-server"></i> ATELIER ENTERPRISE MANAGEMENT SYSTEM</div>
-            <h1 class="heading-2 font-serif" style="margin-top: 2px;">REAL-TIME DATABASE & CRUD CONSOLE</h1>
-          </div>
-          <div class="flex items-center gap-md">
-            <span style="font-size: 0.8rem; background: var(--color-black); color: var(--color-gold); padding: 6px 16px; border-radius: var(--radius-pill); font-weight: 700; letter-spacing: 0.05em;">
-              <i class="fa-solid fa-user-shield"></i> AUTHENTICATED: ${store.currentUser?.email}
-            </span>
+            <div class="admin-user-name">${currentUser?.name || 'Administrator'}</div>
+            <div class="admin-user-role"><i class="fa-solid fa-shield-halved" style="font-size:0.55rem;"></i> ADMIN</div>
           </div>
         </div>
 
-        <div class="admin-layout">
-          <!-- Sidebar Management Menu -->
-          <aside class="admin-sidebar" style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 16px;">
-            <nav style="display: flex; flex-direction: column; gap: 6px;">
-              <button class="admin-nav-item ${activeTab === 'dashboard' ? 'active' : ''}" data-admin-tab="dashboard">
-                <i class="fa-solid fa-chart-pie"></i> Executive Overview
-              </button>
-              <button class="admin-nav-item ${activeTab === 'products' ? 'active' : ''}" data-admin-tab="products">
-                <i class="fa-solid fa-boxes-stacked"></i> Products Database (${products.length})
-              </button>
-              <button class="admin-nav-item ${activeTab === 'users' ? 'active' : ''}" data-admin-tab="users">
-                <i class="fa-solid fa-users"></i> Users Database (${users.length})
-              </button>
-              <button class="admin-nav-item ${activeTab === 'orders' ? 'active' : ''}" data-admin-tab="orders">
-                <i class="fa-solid fa-receipt"></i> Orders Database (${orders.length})
-              </button>
-              <button class="admin-nav-item ${activeTab === 'coupons' ? 'active' : ''}" data-admin-tab="coupons">
-                <i class="fa-solid fa-ticket"></i> Coupons Database (${coupons.length})
-              </button>
-              <button class="admin-nav-item ${activeTab === 'hero' ? 'active' : ''}" data-admin-tab="hero">
-                <i class="fa-solid fa-image"></i> Hero Bar Customizer
-              </button>
-              <button class="admin-nav-item ${activeTab === 'stock' ? 'active' : ''}" data-admin-tab="stock" style="${lowStockItems.length > 0 ? 'color: var(--color-sale-red); font-weight: 700;' : ''}">
-                <i class="fa-solid fa-triangle-exclamation"></i> Stock Alerts (${lowStockItems.length})
-              </button>
-            </nav>
-          </aside>
+        <!-- Navigation -->
+        <nav class="admin-nav-section">
+          <span class="admin-nav-section-label">Main</span>
 
-          <!-- Main Panel Content -->
-          <div class="admin-content">
-            ${
-              activeTab === 'dashboard'
-                ? renderAnalyticsDashboard(totalSales, totalOrdersCount, activeCustomersCount, totalProductsCount, topSelling, lowStockItems)
-                : activeTab === 'users'
-                ? renderUsersTab(users)
-                : activeTab === 'hero'
-                ? renderHeroCustomizerTab(heroConfig)
-                : activeTab === 'products'
-                ? renderProductsTab(products)
-                : activeTab === 'orders'
-                ? renderOrdersTab(orders)
-                : activeTab === 'coupons'
-                ? renderCouponsTab(coupons)
-                : renderStockAlertsTab(lowStockItems)
+          <button class="admin-nav-item ${activeTab === 'dashboard' ? 'active' : ''}" data-admin-tab="dashboard">
+            <i class="fa-solid fa-chart-pie"></i>
+            Executive Overview
+          </button>
+
+          <button class="admin-nav-item ${activeTab === 'products' ? 'active' : ''}" data-admin-tab="products">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            Products
+            <span class="admin-nav-badge">${products.length}</span>
+          </button>
+
+          <button class="admin-nav-item ${activeTab === 'users' ? 'active' : ''}" data-admin-tab="users">
+            <i class="fa-solid fa-users"></i>
+            Users
+            <span class="admin-nav-badge">${users.length}</span>
+          </button>
+
+          <button class="admin-nav-item ${activeTab === 'orders' ? 'active' : ''}" data-admin-tab="orders">
+            <i class="fa-solid fa-receipt"></i>
+            Orders
+            <span class="admin-nav-badge">${orders.length}</span>
+          </button>
+
+          <button class="admin-nav-item ${activeTab === 'coupons' ? 'active' : ''}" data-admin-tab="coupons">
+            <i class="fa-solid fa-ticket"></i>
+            Coupons
+            <span class="admin-nav-badge">${coupons.length}</span>
+          </button>
+        </nav>
+
+        <nav class="admin-nav-section">
+          <span class="admin-nav-section-label">Settings</span>
+
+          <button class="admin-nav-item ${activeTab === 'hero' ? 'active' : ''}" data-admin-tab="hero">
+            <i class="fa-solid fa-image"></i>
+            Hero Customizer
+          </button>
+
+          <button class="admin-nav-item nav-alert ${activeTab === 'stock' ? 'active' : ''}" data-admin-tab="stock">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Stock Alerts
+            ${lowStockItems.length > 0
+              ? `<span class="admin-nav-badge danger">${lowStockItems.length}</span>`
+              : ''
             }
+          </button>
+        </nav>
+
+        <!-- Sidebar Footer -->
+        <div class="admin-sidebar-footer">
+          <button class="admin-sidebar-footer-btn" id="admin-exit-btn">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            Exit to Store
+          </button>
+        </div>
+
+      </aside>
+
+      <!-- ── MAIN CONTENT ─────────────────────────────────────── -->
+      <div class="admin-main">
+
+        <!-- Top Bar -->
+        <div class="admin-topbar">
+          <div>
+            <div class="admin-topbar-title">${tabLabels[activeTab] || 'Dashboard'}</div>
+            <div class="admin-topbar-breadcrumb">Atelier Admin &rsaquo; ${tabLabels[activeTab] || 'Dashboard'}</div>
           </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="admin-live-badge">Live Database</div>
+            <span style="font-size:0.72rem; color:var(--color-muted);">${currentUser?.email}</span>
+          </div>
+        </div>
+
+        <!-- Page Body -->
+        <div class="admin-body">
+          ${
+            activeTab === 'dashboard'
+              ? renderAnalyticsDashboard(totalSales, totalOrdersCount, activeCustomersCount, totalProductsCount, topSelling, lowStockItems)
+              : activeTab === 'users'
+              ? renderUsersTab(users)
+              : activeTab === 'hero'
+              ? renderHeroCustomizerTab(heroConfig)
+              : activeTab === 'products'
+              ? renderProductsTab(products)
+              : activeTab === 'orders'
+              ? renderOrdersTab(orders)
+              : activeTab === 'coupons'
+              ? renderCouponsTab(coupons)
+              : renderStockAlertsTab(lowStockItems)
+          }
         </div>
 
       </div>
@@ -102,6 +169,7 @@ export function renderAdminPage(activeTab = 'dashboard'): string {
   `;
 }
 
+// ── DASHBOARD ──────────────────────────────────────────────────────────────
 function renderAnalyticsDashboard(
   revenue: number,
   ordersCount: number,
@@ -113,109 +181,92 @@ function renderAnalyticsDashboard(
   return `
     <!-- KPI Cards -->
     <div class="kpi-grid">
-      <div class="kpi-card" style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 20px;">
-        <div class="kpi-title">TOTAL REVENUE (RS)</div>
-        <div class="kpi-value" style="color: var(--color-gold);">Rs. ${revenue.toLocaleString()}</div>
-        <div class="kpi-sub" style="color: green;"><i class="fa-solid fa-database"></i> Real-time synced</div>
+      <div class="kpi-card">
+        <div class="kpi-card-icon gold"><i class="fa-solid fa-coins"></i></div>
+        <div class="kpi-title">Total Revenue</div>
+        <div class="kpi-value" style="color:var(--color-gold);">Rs. ${revenue.toLocaleString()}</div>
+        <div class="kpi-sub"><i class="fa-solid fa-database" style="font-size:0.65rem;"></i> Real-time synced</div>
       </div>
-      <div class="kpi-card" style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 20px;">
-        <div class="kpi-title">TOTAL CLIENT ORDERS</div>
+
+      <div class="kpi-card">
+        <div class="kpi-card-icon dark"><i class="fa-solid fa-receipt"></i></div>
+        <div class="kpi-title">Total Orders</div>
         <div class="kpi-value">${ordersCount}</div>
         <div class="kpi-sub">Lifetime orders</div>
       </div>
-      <div class="kpi-card" style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 20px;">
-        <div class="kpi-title">REGISTERED USERS</div>
+
+      <div class="kpi-card">
+        <div class="kpi-card-icon green"><i class="fa-solid fa-users"></i></div>
+        <div class="kpi-title">Registered Users</div>
         <div class="kpi-value">${customersCount}</div>
         <div class="kpi-sub">Client database</div>
       </div>
-      <div class="kpi-card" style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 20px;">
-        <div class="kpi-title">CATALOG ITEMS</div>
+
+      <div class="kpi-card">
+        <div class="kpi-card-icon blue"><i class="fa-solid fa-boxes-stacked"></i></div>
+        <div class="kpi-title">Catalog Items</div>
         <div class="kpi-value">${productsCount}</div>
-        <div class="kpi-sub">${lowStock.length > 0 ? `<span class="text-sale">${lowStock.length} Low Stock!</span>` : 'Healthy Inventory'}</div>
+        <div class="kpi-sub">${lowStock.length > 0 ? `<span style="color:var(--color-sale-red);">${lowStock.length} Low Stock</span>` : 'Healthy inventory'}</div>
       </div>
     </div>
 
-    ${
-      lowStock.length > 0
-        ? `
-      <div style="background: #FDEDEC; border: 1px solid #F5C6CB; padding: 14px 18px; border-radius: var(--radius-sm); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+    <!-- Stock Alert Banner -->
+    ${lowStock.length > 0 ? `
+      <div class="admin-alert admin-alert-danger">
         <div>
-          <strong style="color: var(--color-sale-red);"><i class="fa-solid fa-triangle-exclamation"></i> INVENTORY ALERT:</strong> ${lowStock.length} product(s) have low stock (< 10 units remaining).
+          <strong><i class="fa-solid fa-triangle-exclamation"></i> Inventory Alert:</strong>
+          ${lowStock.length} product(s) running low (&lt; 10 units remaining).
         </div>
-        <button class="btn btn-primary" style="padding: 6px 14px; font-size: 0.75rem; background: var(--color-sale-red);" data-admin-tab="stock">VIEW STOCK ALERTS</button>
+        <button class="btn btn-primary" style="padding:5px 14px; font-size:0.72rem; background:var(--color-sale-red); color:#FFF; border:none; border-radius:3px; cursor:pointer;" data-admin-tab="stock">
+          View Alerts
+        </button>
       </div>
-    `
-        : ''
-    }
+    ` : ''}
 
-    <!-- Analytics Visual Bars & Top Sellers Grid -->
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
-      
-      <!-- Category Sales Breakdown Visual Bar -->
-      <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 20px;">
-        <h3 class="heading-3 font-serif" style="margin-bottom: 16px;">Category Inventory & Demand Distribution</h3>
-        
-        <div style="margin-bottom: 16px;">
-          <div class="flex justify-between" style="font-size: 0.8rem; margin-bottom: 4px;">
-            <span>Clothing (Haute Gowns, Tops & Abayas)</span>
-            <strong>38%</strong>
-          </div>
-          <div style="height: 8px; background: #EAE3D9; border-radius: 4px; overflow: hidden;">
-            <div style="width: 38%; height: 100%; background: var(--color-gold);"></div>
-          </div>
+    <!-- Charts Row -->
+    <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px; margin-bottom:24px;">
+
+      <!-- Category Breakdown -->
+      <div class="admin-section-card" style="margin-bottom:0;">
+        <h3 class="admin-table-title" style="margin-bottom:20px;">Category Inventory Distribution</h3>
+
+        <div class="admin-bar-row">
+          <div class="admin-bar-label"><span>Clothing (Gowns, Tops &amp; Abayas)</span><strong>38%</strong></div>
+          <div class="admin-bar-track"><div class="admin-bar-fill" style="width:38%; background:var(--color-gold);"></div></div>
         </div>
 
-        <div style="margin-bottom: 16px;">
-          <div class="flex justify-between" style="font-size: 0.8rem; margin-bottom: 4px;">
-            <span>Leather Handbags & Totes</span>
-            <strong>25%</strong>
-          </div>
-          <div style="height: 8px; background: #EAE3D9; border-radius: 4px; overflow: hidden;">
-            <div style="width: 25%; height: 100%; background: var(--color-black);"></div>
-          </div>
+        <div class="admin-bar-row">
+          <div class="admin-bar-label"><span>Leather Handbags &amp; Totes</span><strong>25%</strong></div>
+          <div class="admin-bar-track"><div class="admin-bar-fill" style="width:25%; background:var(--color-black);"></div></div>
         </div>
 
-        <div style="margin-bottom: 16px;">
-          <div class="flex justify-between" style="font-size: 0.8rem; margin-bottom: 4px;">
-            <span>Stiletto Heels & Footwear</span>
-            <strong>25%</strong>
-          </div>
-          <div style="height: 8px; background: #EAE3D9; border-radius: 4px; overflow: hidden;">
-            <div style="width: 25%; height: 100%; background: var(--color-espresso);"></div>
-          </div>
+        <div class="admin-bar-row">
+          <div class="admin-bar-label"><span>Stiletto Heels &amp; Footwear</span><strong>25%</strong></div>
+          <div class="admin-bar-track"><div class="admin-bar-fill" style="width:25%; background:var(--color-espresso);"></div></div>
         </div>
 
-        <div>
-          <div class="flex justify-between" style="font-size: 0.8rem; margin-bottom: 4px;">
-            <span>Fine Jewelry & Accessories</span>
-            <strong>12%</strong>
-          </div>
-          <div style="height: 8px; background: #EAE3D9; border-radius: 4px; overflow: hidden;">
-            <div style="width: 12%; height: 100%; background: #D4A59A;"></div>
-          </div>
+        <div class="admin-bar-row">
+          <div class="admin-bar-label"><span>Fine Jewelry &amp; Accessories</span><strong>12%</strong></div>
+          <div class="admin-bar-track"><div class="admin-bar-fill" style="width:12%; background:#D4A59A;"></div></div>
         </div>
       </div>
 
-      <!-- Top Selling Products list -->
-      <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 20px;">
-        <h3 class="heading-3 font-serif" style="margin-bottom: 16px;">Best Selling Pieces</h3>
+      <!-- Top Sellers -->
+      <div class="admin-section-card" style="margin-bottom:0;">
+        <h3 class="admin-table-title" style="margin-bottom:18px;">Best Selling Pieces</h3>
         ${
           topSelling.length > 0
-            ? topSelling
-                .map(
-                  (item) => `
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--color-border-light);">
-                <img src="${item.image}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 2px;" />
-                <div style="flex: 1; font-size: 0.8rem;">
-                  <div style="font-weight: 600; line-clamp: 1;">${item.name}</div>
-                  <div style="color: var(--color-muted);">${item.sold} Units Sold</div>
+            ? topSelling.map((item) => `
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #F0ECE6;">
+                <img src="${item.image}" style="width:38px; height:48px; object-fit:cover; border-radius:2px; flex-shrink:0;" />
+                <div style="flex:1; min-width:0;">
+                  <div style="font-weight:600; font-size:0.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</div>
+                  <div style="font-size:0.7rem; color:var(--color-muted);">${item.sold} units sold</div>
                 </div>
-                <div style="font-weight: 700; font-size: 0.85rem;" class="text-gold">Rs. ${item.revenue.toLocaleString()}</div>
+                <div style="font-weight:700; font-size:0.8rem; color:var(--color-gold); white-space:nowrap;">Rs. ${item.revenue.toLocaleString()}</div>
               </div>
-            `
-                )
-                .join('')
-            : `<div style="font-size: 0.85rem; color: var(--color-muted);">No sales recorded yet.</div>`
+            `).join('')
+            : `<div style="font-size:0.83rem; color:var(--color-muted); padding:20px 0; text-align:center;">No sales recorded yet.</div>`
         }
       </div>
 
@@ -223,355 +274,345 @@ function renderAnalyticsDashboard(
   `;
 }
 
+// ── USERS ──────────────────────────────────────────────────────────────────
 function renderUsersTab(users: any[]): string {
   return `
-    <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 24px;">
-      <div class="flex justify-between items-center" style="margin-bottom: 20px;">
-        <h3 class="heading-3 font-serif">Users Database & Activity Management</h3>
-        <div style="font-size: 0.8rem; color: var(--color-muted);"><i class="fa-solid fa-database"></i> Real-time synced</div>
+    <div class="admin-table-card">
+      <div class="admin-table-header">
+        <div>
+          <div class="admin-table-title">Users Database</div>
+          <div class="admin-table-sub">${users.length} registered accounts</div>
+        </div>
+        <span style="font-size:0.72rem; color:var(--color-muted);"><i class="fa-solid fa-database"></i> Real-time synced</span>
       </div>
-
       <table class="admin-table">
         <thead>
           <tr>
-            <th>USER PROFILE</th>
-            <th>ROLE</th>
-            <th>REGISTERED AT</th>
-            <th>LAST LOGIN TIME</th>
-            <th>STATUS</th>
-            <th>ACTIONS</th>
+            <th>User Profile</th>
+            <th>Role</th>
+            <th>Registered</th>
+            <th>Last Login</th>
+            <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          ${users
-            .map(
-              (u) => `
+          ${users.map((u) => `
             <tr>
               <td>
-                <div class="flex items-center gap-sm">
-                  <img src="${u.avatar || '/images/hero_model.png'}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 50%; border: 1px solid var(--color-gold);" />
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <img src="${u.avatar || '/images/hero_model.png'}" style="width:34px; height:34px; object-fit:cover; border-radius:50%; border:1.5px solid var(--color-gold);" />
                   <div>
-                    <div style="font-weight: 600;">${u.name}</div>
-                    <div style="font-size: 0.75rem; color: var(--color-muted);">${u.email}</div>
+                    <div style="font-weight:600; font-size:0.83rem;">${u.name}</div>
+                    <div style="font-size:0.72rem; color:var(--color-muted);">${u.email}</div>
                   </div>
                 </div>
               </td>
               <td>
-                <span style="font-size: 0.75rem; font-weight: 700; color: ${u.role === 'ADMIN' ? 'var(--color-gold)' : 'var(--color-black)'};">
+                <span class="badge ${u.role === 'ADMIN' ? 'badge-admin' : ''}" style="${u.role !== 'ADMIN' ? 'background:rgba(21,21,21,0.06); color:var(--color-black);' : ''}">
                   ${u.role}
                 </span>
               </td>
-              <td style="font-size: 0.8rem;">${u.registeredAt || 'Jan 10, 2026'}</td>
-              <td style="font-size: 0.8rem; font-weight: 600;">${u.lastLoginAt || 'Recent'}</td>
+              <td style="font-size:0.78rem; color:var(--color-muted);">${u.registeredAt || 'Jan 10, 2026'}</td>
+              <td style="font-size:0.78rem;">${u.lastLoginAt || 'Recent'}</td>
               <td>
-                ${
-                  u.isBanned
-                    ? `<span style="background: #FDEDEC; color: #721C24; padding: 2px 8px; border-radius: 2px; font-weight: 600; font-size: 0.75rem;"><i class="fa-solid fa-user-slash"></i> BANNED</span>`
-                    : `<span style="background: #E8F8F5; color: #117864; padding: 2px 8px; border-radius: 2px; font-weight: 600; font-size: 0.75rem;"><i class="fa-solid fa-user-check"></i> ACTIVE</span>`
+                ${u.isBanned
+                  ? `<span class="badge badge-banned"><i class="fa-solid fa-user-slash"></i> Banned</span>`
+                  : `<span class="badge badge-active"><i class="fa-solid fa-user-check"></i> Active</span>`
                 }
               </td>
               <td>
-                ${
-                  u.role !== 'ADMIN'
-                    ? `
-                  ${
-                    u.isBanned
-                      ? `<button class="btn-unban-user" data-user-id="${u.id}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid #117864; color: #117864; background: none; cursor: pointer; margin-right: 4px;">Unban</button>`
-                      : `<button class="btn-ban-user" data-user-id="${u.id}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid #F5C6CB; color: var(--color-sale-red); background: none; cursor: pointer; margin-right: 4px;"><i class="fa-solid fa-ban"></i> Ban</button>`
-                  }
-                  <button class="btn-remove-user" data-user-id="${u.id}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-border); color: var(--color-muted); background: none; cursor: pointer;">
-                    <i class="fa-solid fa-trash"></i> Remove
-                  </button>
-                `
-                    : `<span style="font-size: 0.75rem; color: var(--color-muted);">Protected Admin</span>`
+                ${u.role !== 'ADMIN'
+                  ? `
+                    ${u.isBanned
+                      ? `<button class="btn-unban-user btn-sm btn-success" data-user-id="${u.id}">Unban</button>`
+                      : `<button class="btn-ban-user btn-sm btn-danger" data-user-id="${u.id}"><i class="fa-solid fa-ban"></i> Ban</button>`
+                    }
+                    <button class="btn-remove-user btn-sm btn-outline" data-user-id="${u.id}" style="margin-left:6px;"><i class="fa-solid fa-trash"></i></button>
+                  `
+                  : `<span style="font-size:0.72rem; color:var(--color-muted);">Protected</span>`
                 }
               </td>
             </tr>
-          `
-            )
-            .join('')}
+          `).join('')}
         </tbody>
       </table>
     </div>
   `;
 }
 
+// ── HERO CUSTOMIZER ─────────────────────────────────────────────────────────
 function renderHeroCustomizerTab(heroConfig: any): string {
   return `
-    <div style="background: #FFF; border: 1px solid var(--color-border); padding: 24px; border-radius: var(--radius-sm);">
-      <h3 class="heading-3 font-serif" style="margin-bottom: 20px;">Hero Bar Customizer & Banner Management</h3>
-      <form id="hero-customizer-form">
-        <div style="margin-bottom: 16px;">
-          <label class="form-label">Hero Title Headline</label>
-          <input type="text" id="hero-title-input" value="${heroConfig.title}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required />
+    <div class="admin-section-card">
+      <h3 class="admin-table-title" style="margin-bottom:22px;">Hero Banner Customizer</h3>
+      <form id="hero-customizer-form" style="max-width:600px;">
+        <div class="admin-form-group">
+          <label class="admin-form-label">Hero Title Headline</label>
+          <input type="text" id="hero-title-input" value="${heroConfig.title}" class="admin-form-input" required />
         </div>
-
-        <div style="margin-bottom: 16px;">
-          <label class="form-label">Subtitle Badge Text</label>
-          <input type="text" id="hero-subtitle-input" value="${heroConfig.subtitle}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required />
+        <div class="admin-form-group">
+          <label class="admin-form-label">Subtitle Badge Text</label>
+          <input type="text" id="hero-subtitle-input" value="${heroConfig.subtitle}" class="admin-form-input" required />
         </div>
-
-        <div style="margin-bottom: 16px;">
-          <label class="form-label">Hero Tagline Description</label>
-          <textarea id="hero-tagline-input" class="newsletter-input" style="width: 100%; height: 80px; border: 1px solid var(--color-border); color: var(--color-black);" required>${heroConfig.tagline}</textarea>
+        <div class="admin-form-group">
+          <label class="admin-form-label">Hero Tagline Description</label>
+          <textarea id="hero-tagline-input" class="admin-form-textarea" required>${heroConfig.tagline}</textarea>
         </div>
-
-        <div style="margin-bottom: 24px;">
-          <label class="form-label">Hero Banner Model Image URL</label>
-          <input type="text" id="hero-image-input" value="${heroConfig.imageUrl}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required />
+        <div class="admin-form-group">
+          <label class="admin-form-label">Hero Banner Image URL</label>
+          <input type="text" id="hero-image-input" value="${heroConfig.imageUrl}" class="admin-form-input" required />
         </div>
-
-        <button type="submit" class="btn btn-gold" style="padding: 10px 24px;">SAVE HERO BANNER CHANGES</button>
+        <button type="submit" class="btn btn-gold" style="padding:10px 24px; margin-top:4px;">
+          <i class="fa-solid fa-floppy-disk"></i> Save Hero Changes
+        </button>
       </form>
     </div>
   `;
 }
 
+// ── PRODUCTS ────────────────────────────────────────────────────────────────
 function renderProductsTab(products: any[]): string {
   return `
-    <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 24px;">
-      <div class="flex justify-between items-center" style="margin-bottom: 20px;">
+    <div class="admin-table-card">
+      <div class="admin-table-header">
         <div>
-          <h3 class="heading-3 font-serif">Products Catalog CRUD Database</h3>
-          <div style="font-size: 0.8rem; color: var(--color-muted);">${products.length} Items stored in persistent database</div>
+          <div class="admin-table-title">Products Catalog</div>
+          <div class="admin-table-sub">${products.length} items in database</div>
         </div>
-        <button class="btn btn-gold" id="admin-add-prod-modal-btn" style="padding: 8px 18px; font-size: 0.8rem;">
-          <i class="fa-solid fa-plus"></i> ADD NEW PRODUCT
+        <button class="btn btn-gold" id="admin-add-prod-modal-btn" style="padding:7px 16px; font-size:0.78rem;">
+          <i class="fa-solid fa-plus"></i> Add Product
         </button>
       </div>
-
-      <!-- Product Table -->
       <table class="admin-table">
         <thead>
           <tr>
-            <th>PRODUCT</th>
+            <th>Product</th>
             <th>SKU</th>
-            <th>CATEGORY</th>
-            <th>PRICE</th>
-            <th>STOCK</th>
-            <th>ACTIONS</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          ${products
-            .map(
-              (p) => `
+          ${products.map((p) => `
             <tr>
               <td>
-                <div class="flex items-center gap-sm">
-                  <img src="${p.primaryImage}" style="width: 36px; height: 48px; object-fit: cover;" />
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <img src="${p.primaryImage}" style="width:34px; height:44px; object-fit:cover; border-radius:2px; flex-shrink:0;" />
                   <div>
-                    <div style="font-weight: 600;">${p.name}</div>
-                    <div style="font-size: 0.72rem; color: var(--color-muted);">${p.subcategory}</div>
+                    <div style="font-weight:600; font-size:0.83rem;">${p.name}</div>
+                    <div style="font-size:0.7rem; color:var(--color-muted);">${p.subcategory}</div>
                   </div>
                 </div>
               </td>
-              <td style="font-family: monospace; font-size: 0.8rem;">${p.sku}</td>
-              <td>${p.category}</td>
-              <td style="font-weight: 600;">Rs. ${p.price.toLocaleString()}</td>
+              <td style="font-family:monospace; font-size:0.76rem; color:var(--color-muted);">${p.sku}</td>
+              <td style="font-size:0.8rem;">${p.category}</td>
+              <td style="font-weight:600; font-size:0.83rem;">Rs. ${p.price.toLocaleString()}</td>
               <td>
-                ${
-                  p.stock < 10
-                    ? `<span style="background: #FDEDEC; color: #721C24; padding: 2px 8px; border-radius: 2px; font-weight: 600; font-size: 0.75rem;">${p.stock} LOW</span>`
-                    : `<span style="background: #E8F8F5; color: #117864; padding: 2px 8px; border-radius: 2px; font-weight: 600; font-size: 0.75rem;">${p.stock} in stock</span>`
+                ${p.stock < 10
+                  ? `<span class="badge badge-low">${p.stock} Low</span>`
+                  : `<span class="badge badge-ok">${p.stock}</span>`
                 }
               </td>
               <td>
-                <button class="btn-edit-prod-modal" data-prod-id="${p.id}" style="padding: 4px 10px; font-size: 0.75rem; border: 1px solid var(--color-border); background: none; cursor: pointer; margin-right: 4px;">
+                <button class="btn-edit-prod-modal btn-sm btn-outline" data-prod-id="${p.id}">
                   <i class="fa-solid fa-pen-to-square"></i> Edit
                 </button>
-                <button class="btn-del-prod" data-prod-id="${p.id}" style="padding: 4px 10px; font-size: 0.75rem; border: 1px solid #F5C6CB; color: var(--color-sale-red); background: none; cursor: pointer;">
-                  <i class="fa-solid fa-trash"></i> Delete
+                <button class="btn-del-prod btn-sm btn-danger" data-prod-id="${p.id}" style="margin-left:6px;">
+                  <i class="fa-solid fa-trash"></i>
                 </button>
               </td>
             </tr>
-          `
-            )
-            .join('')}
+          `).join('')}
         </tbody>
       </table>
     </div>
   `;
 }
 
+// ── ORDERS ──────────────────────────────────────────────────────────────────
 function renderOrdersTab(orders: any[]): string {
   return `
-    <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 24px;">
-      <h3 class="heading-3 font-serif" style="margin-bottom: 20px;">Client Orders Fulfillment Database</h3>
-      ${
-        orders.length > 0
-          ? `
+    <div class="admin-table-card">
+      <div class="admin-table-header">
+        <div>
+          <div class="admin-table-title">Client Orders</div>
+          <div class="admin-table-sub">${orders.length} total orders</div>
+        </div>
+      </div>
+      ${orders.length > 0 ? `
         <table class="admin-table">
           <thead>
             <tr>
-              <th>ORDER ID</th>
-              <th>DATE</th>
-              <th>CLIENT</th>
-              <th>ITEMS</th>
-              <th>TOTAL</th>
-              <th>STATUS</th>
-              <th>TRACKING</th>
+              <th>Order ID</th>
+              <th>Date</th>
+              <th>Client</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Tracking</th>
             </tr>
           </thead>
           <tbody>
-            ${orders
-              .map(
-                (o) => `
+            ${orders.map((o) => `
               <tr>
-                <td style="font-weight: 700; font-family: monospace;">${o.id}</td>
-                <td style="font-size: 0.8rem;">${o.date}</td>
+                <td style="font-weight:700; font-family:monospace; font-size:0.76rem;">${o.id}</td>
+                <td style="font-size:0.78rem; color:var(--color-muted);">${o.date}</td>
                 <td>
-                  <div style="font-weight: 600;">${o.customerName}</div>
-                  <div style="font-size: 0.75rem; color: var(--color-muted);">${o.customerEmail}</div>
+                  <div style="font-weight:600; font-size:0.82rem;">${o.customerName}</div>
+                  <div style="font-size:0.7rem; color:var(--color-muted);">${o.customerEmail}</div>
                 </td>
-                <td style="font-size: 0.8rem;">${o.items.length} items</td>
-                <td style="font-weight: 700;">Rs. ${o.total.toLocaleString()}</td>
+                <td style="font-size:0.8rem;">${o.items.length} items</td>
+                <td style="font-weight:700; font-size:0.83rem;">Rs. ${o.total.toLocaleString()}</td>
                 <td>
-                  <select class="order-status-select" data-order-id="${o.id}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm);">
-                    <option ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                  <select class="order-status-select" data-order-id="${o.id}" style="padding:4px 8px; font-size:0.73rem; border:1px solid #E0DBD4; border-radius:3px; background:#FFF; cursor:pointer;">
+                    <option ${o.status === 'Pending'    ? 'selected' : ''}>Pending</option>
                     <option ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
-                    <option ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
-                    <option ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                    <option ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                    <option ${o.status === 'Shipped'    ? 'selected' : ''}>Shipped</option>
+                    <option ${o.status === 'Delivered'  ? 'selected' : ''}>Delivered</option>
+                    <option ${o.status === 'Cancelled'  ? 'selected' : ''}>Cancelled</option>
                   </select>
                 </td>
-                <td>
-                  <span style="font-size: 0.75rem; color: var(--color-gold);"><i class="fa-solid fa-truck"></i> ${o.trackingNumber}</span>
+                <td style="font-size:0.73rem; color:var(--color-gold);">
+                  <i class="fa-solid fa-truck"></i> ${o.trackingNumber}
                 </td>
               </tr>
-            `
-              )
-              .join('')}
+            `).join('')}
           </tbody>
         </table>
-      `
-          : `<div style="padding: 40px; text-align: center; color: var(--color-muted); background: #FFF; border: 1px solid var(--color-border);">No client orders have been placed yet.</div>`
-      }
+      ` : `
+        <div style="padding:48px; text-align:center; color:var(--color-muted); font-size:0.85rem;">
+          <i class="fa-solid fa-receipt" style="font-size:2rem; margin-bottom:12px; display:block; opacity:0.3;"></i>
+          No client orders placed yet.
+        </div>
+      `}
     </div>
   `;
 }
 
+// ── COUPONS ─────────────────────────────────────────────────────────────────
 function renderCouponsTab(coupons: any[]): string {
   return `
-    <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 24px;">
-      <div class="flex justify-between items-center" style="margin-bottom: 20px;">
-        <h3 class="heading-3 font-serif">Single-Use Coupon Database</h3>
-        <form id="add-coupon-form" class="flex gap-sm">
-          <input type="text" id="new-coupon-code" placeholder="CODE (e.g. LUXE25)" required style="padding: 6px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); text-transform: uppercase;" />
-          <input type="number" id="new-coupon-discount" placeholder="Discount %" min="1" max="90" required style="width: 110px; padding: 6px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);" />
-          <button type="submit" class="btn btn-gold" style="padding: 6px 16px; font-size: 0.8rem;">CREATE COUPON</button>
+    <div class="admin-table-card">
+      <div class="admin-table-header">
+        <div>
+          <div class="admin-table-title">Coupon Database</div>
+          <div class="admin-table-sub">${coupons.length} coupons total</div>
+        </div>
+        <form id="add-coupon-form" style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="new-coupon-code" placeholder="Code (e.g. LUXE25)" required
+            style="padding:7px 12px; border:1px solid #E0DBD4; border-radius:3px; font-size:0.78rem; text-transform:uppercase; width:140px;" />
+          <input type="number" id="new-coupon-discount" placeholder="Discount %" min="1" max="90" required
+            style="width:100px; padding:7px 10px; border:1px solid #E0DBD4; border-radius:3px; font-size:0.78rem;" />
+          <button type="submit" class="btn btn-gold" style="padding:7px 16px; font-size:0.78rem;">
+            <i class="fa-solid fa-plus"></i> Create
+          </button>
         </form>
       </div>
-
       <table class="admin-table">
         <thead>
           <tr>
-            <th>COUPON CODE</th>
-            <th>DISCOUNT</th>
-            <th>SINGLE-USE STATUS</th>
-            <th>USED BY CLIENT</th>
-            <th>ACTION</th>
+            <th>Coupon Code</th>
+            <th>Discount</th>
+            <th>Status</th>
+            <th>Used By</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          ${coupons
-            .map(
-              (c) => `
+          ${coupons.map((c) => `
             <tr>
-              <td style="font-weight: 700; font-family: monospace; letter-spacing: 0.05em;">${c.code}</td>
-              <td style="font-weight: 600;" class="text-gold">${c.discountPercent}% OFF</td>
+              <td style="font-weight:700; font-family:monospace; letter-spacing:0.06em; font-size:0.85rem;">${c.code}</td>
+              <td style="font-weight:600; color:var(--color-gold);">${c.discountPercent}% OFF</td>
               <td>
-                ${
-                  c.isUsed
-                    ? `<span style="background: #FDEDEC; color: #721C24; padding: 2px 8px; border-radius: 2px; font-weight: 600; font-size: 0.75rem;"><i class="fa-solid fa-lock"></i> USED (DISABLED)</span>`
-                    : `<span style="background: #E8F8F5; color: #117864; padding: 2px 8px; border-radius: 2px; font-weight: 600; font-size: 0.75rem;"><i class="fa-solid fa-check"></i> ACTIVE (1-TIME USE AVAILABLE)</span>`
+                ${c.isUsed
+                  ? `<span class="badge badge-used"><i class="fa-solid fa-lock"></i> Used</span>`
+                  : `<span class="badge badge-avail"><i class="fa-solid fa-check"></i> Active</span>`
                 }
               </td>
-              <td style="font-size: 0.8rem; color: var(--color-muted);">${c.usedByEmail || '—'}</td>
+              <td style="font-size:0.78rem; color:var(--color-muted);">${c.usedByEmail || '—'}</td>
               <td>
-                <button class="btn-del-coupon" data-code="${c.code}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid #F5C6CB; color: var(--color-sale-red); background: none; cursor: pointer;">
-                  <i class="fa-solid fa-trash"></i> Delete
+                <button class="btn-del-coupon btn-sm btn-danger" data-code="${c.code}">
+                  <i class="fa-solid fa-trash"></i>
                 </button>
               </td>
             </tr>
-          `
-            )
-            .join('')}
+          `).join('')}
         </tbody>
       </table>
     </div>
   `;
 }
 
+// ── STOCK ALERTS ─────────────────────────────────────────────────────────────
 function renderStockAlertsTab(lowStock: any[]): string {
+  if (lowStock.length === 0) {
+    return `
+      <div class="admin-section-card" style="text-align:center; padding:48px;">
+        <i class="fa-solid fa-circle-check" style="font-size:2.5rem; color:#27AE60; margin-bottom:14px; display:block;"></i>
+        <div style="font-size:1rem; font-weight:600; color:#27AE60; margin-bottom:6px;">All Clear</div>
+        <div style="font-size:0.83rem; color:var(--color-muted);">All catalog items have healthy inventory (&gt; 10 units).</div>
+      </div>
+    `;
+  }
+
   return `
-    <div style="background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 24px;">
-      <h3 class="heading-3 font-serif" style="margin-bottom: 20px; color: var(--color-sale-red);">
-        <i class="fa-solid fa-triangle-exclamation"></i> Low Inventory & Out-of-Stock Warnings Database
-      </h3>
-      ${
-        lowStock.length > 0
-          ? `
-        <table class="admin-table">
-          <thead>
+    <div class="admin-table-card">
+      <div class="admin-table-header">
+        <div>
+          <div class="admin-table-title" style="color:var(--color-sale-red);">
+            <i class="fa-solid fa-triangle-exclamation"></i> Low Stock Warnings
+          </div>
+          <div class="admin-table-sub">${lowStock.length} item(s) need restocking</div>
+        </div>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Category</th>
+            <th>Units Left</th>
+            <th>Status</th>
+            <th>Quick Restock</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lowStock.map((p) => `
             <tr>
-              <th>PRODUCT</th>
-              <th>SKU</th>
-              <th>CATEGORY</th>
-              <th>REMAINING UNITS</th>
-              <th>STATUS</th>
-              <th>QUICK RE-STOCK</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${lowStock
-              .map(
-                (p) => `
-              <tr>
-                <td>
-                  <div class="flex items-center gap-sm">
-                    <img src="${p.primaryImage}" style="width: 36px; height: 48px; object-fit: cover;" />
-                    <div>
-                      <div style="font-weight: 600;">${p.name}</div>
-                      <div style="font-size: 0.72rem; color: var(--color-muted);">${p.subcategory}</div>
-                    </div>
+              <td>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <img src="${p.primaryImage}" style="width:34px; height:44px; object-fit:cover; border-radius:2px; flex-shrink:0;" />
+                  <div>
+                    <div style="font-weight:600; font-size:0.83rem;">${p.name}</div>
+                    <div style="font-size:0.7rem; color:var(--color-muted);">${p.subcategory}</div>
                   </div>
-                </td>
-                <td style="font-family: monospace; font-size: 0.8rem;">${p.sku}</td>
-                <td>${p.category}</td>
-                <td style="font-weight: 700; color: var(--color-sale-red); font-size: 1.1rem;">${p.stock}</td>
-                <td>
-                  ${
-                    p.stock === 0
-                      ? `<span style="background: #721C24; color: #FFF; padding: 2px 8px; border-radius: 2px; font-weight: 700; font-size: 0.75rem;">OUT OF STOCK</span>`
-                      : `<span style="background: #FDEDEC; color: #721C24; padding: 2px 8px; border-radius: 2px; font-weight: 600; font-size: 0.75rem;">CRITICAL STOCK</span>`
-                  }
-                </td>
-                <td>
-                  <form class="restock-form" data-prod-id="${p.id}" style="display: flex; gap: 6px; align-items: center;">
-                    <input
-                      type="number"
-                      class="restock-qty-input"
-                      min="1"
-                      max="999"
-                      placeholder="Qty"
-                      value="20"
-                      style="width: 64px; padding: 4px 8px; font-size: 0.8rem; border: 1px solid var(--color-border); border-radius: 2px; text-align: center;"
-                    />
-                    <button type="submit" style="padding: 4px 10px; font-size: 0.75rem; background: var(--color-gold); color: #FFF; border: none; cursor: pointer; border-radius: 2px; white-space: nowrap;">
-                      <i class="fa-solid fa-plus"></i> Add Stock
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            `
-              )
-              .join('')}
-          </tbody>
-        </table>
-      `
-          : `<div style="padding: 40px; text-align: center; color: green; background: #E8F8F5; border: 1px solid #A3E4D7;"><i class="fa-solid fa-circle-check" style="font-size: 1.5rem; margin-bottom: 8px;"></i><br>All catalog items have healthy inventory (>10 units).</div>`
-      }
+                </div>
+              </td>
+              <td style="font-family:monospace; font-size:0.76rem; color:var(--color-muted);">${p.sku}</td>
+              <td style="font-size:0.8rem;">${p.category}</td>
+              <td style="font-weight:700; color:var(--color-sale-red); font-size:1.05rem;">${p.stock}</td>
+              <td>
+                ${p.stock === 0
+                  ? `<span class="badge badge-out">Out of Stock</span>`
+                  : `<span class="badge badge-low">Critical Stock</span>`
+                }
+              </td>
+              <td>
+                <form class="restock-form" data-prod-id="${p.id}" style="display:flex; gap:6px; align-items:center;">
+                  <input type="number" class="restock-qty-input" min="1" max="999" value="20"
+                    style="width:60px; padding:5px 8px; font-size:0.78rem; border:1px solid #E0DBD4; border-radius:3px; text-align:center;" />
+                  <button type="submit" class="btn-sm btn-success">
+                    <i class="fa-solid fa-plus"></i> Add
+                  </button>
+                </form>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
     </div>
   `;
 }
