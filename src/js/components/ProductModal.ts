@@ -1,8 +1,9 @@
 import { store } from '../data/mockState';
 
-export function renderProductModal(): string {
+export function renderProductModal(quantity = 1): string {
   const product = store.selectedProductForModal;
   if (!product) return '';
+  const isWishlisted = store.wishlist.includes(product.id);
 
   return `
     <div class="modal-overlay active" id="product-modal-overlay">
@@ -22,7 +23,16 @@ export function renderProductModal(): string {
           <!-- Product Info Details -->
           <div>
             <div class="subtitle" style="margin-bottom: 6px;">${product.sku}</div>
-            <h2 class="heading-2 font-serif" style="margin-bottom: 10px;">${product.name}</h2>
+            <div class="flex justify-between items-start">
+              <h2 class="heading-2 font-serif" style="margin-bottom: 10px;">${product.name}</h2>
+              <button
+                id="modal-wishlist-btn"
+                title="Add to Favourites"
+                style="background:none; border:1px solid var(--color-border); border-radius:50%; width:40px; height:40px; flex-shrink:0; cursor:pointer; display:flex; align-items:center; justify-content:center; color:${isWishlisted ? '#C5A880' : 'var(--color-muted)'};"
+              >
+                <i class="${isWishlisted ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+              </button>
+            </div>
             
             <div class="product-rating" style="margin-bottom: 16px;">
               <i class="fa-solid fa-star"></i>
@@ -75,10 +85,10 @@ export function renderProductModal(): string {
             </div>
 
             <!-- Quantity & Add to Cart -->
-            <div class="flex gap-md" style="margin-bottom: 24px;">
+            <div class="flex gap-md" style="margin-bottom: 12px;">
               <div class="qty-controls" style="height: 48px; padding: 0 8px;">
                 <button class="qty-btn" id="modal-qty-minus">-</button>
-                <span class="qty-val" id="modal-qty-val">1</span>
+                <span class="qty-val" id="modal-qty-val">${quantity}</span>
                 <button class="qty-btn" id="modal-qty-plus">+</button>
               </div>
 
@@ -86,6 +96,10 @@ export function renderProductModal(): string {
                 <i class="fa-solid fa-bag-shopping"></i> ADD TO ATELIER BAG
               </button>
             </div>
+
+            <button class="btn btn-gold" id="modal-buy-now-btn" style="width: 100%; height: 48px; margin-bottom: 24px;">
+              <i class="fa-solid fa-bolt"></i> BUY IT NOW
+            </button>
 
             <!-- Trust Badges -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; padding: 16px; background-color: #FAF5EE; border-radius: var(--radius-sm); font-size: 0.75rem;">

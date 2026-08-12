@@ -22,9 +22,8 @@ export function renderAuthModal(activeTab: 'login' | 'register' = 'login'): stri
         <!-- Alert Banner -->
         <div id="auth-error-alert" style="display: none; padding: 10px 14px; background: #FDEDEC; border: 1px solid #F5C6CB; border-radius: var(--radius-sm); color: #721C24; font-size: 0.8rem; margin-bottom: 16px;"></div>
 
-        ${
-          activeTab === 'login'
-            ? `
+        ${activeTab === 'login'
+      ? `
           <form id="auth-login-form">
             <div style="margin-bottom: 16px;">
               <label class="form-label">Email Address *</label>
@@ -42,13 +41,9 @@ export function renderAuthModal(activeTab: 'login' | 'register' = 'login'): stri
             <button type="submit" class="btn btn-primary" style="width: 100%; height: 48px;">
               SIGN IN TO ATELIER
             </button>
-
-            <div style="margin-top: 16px; font-size: 0.75rem; color: var(--color-muted); text-align: center;">
-              Admin credentials: <strong>atif@admin.com</strong> / <strong>atif@access.com</strong>
-            </div>
           </form>
         `
-            : `
+      : `
           <form id="auth-register-form">
             <div style="margin-bottom: 14px;">
               <label class="form-label">Full Name *</label>
@@ -90,7 +85,7 @@ export function renderAuthModal(activeTab: 'login' | 'register' = 'login'): stri
             </button>
           </form>
         `
-        }
+    }
       </div>
     </div>
   `;

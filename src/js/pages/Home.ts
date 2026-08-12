@@ -1,9 +1,12 @@
 import { SHOP_THE_LOOK_DATA, JOURNAL_STORIES } from '../data/collections';
-import { PRODUCTS_DATA } from '../data/products';
 import { renderProductCard } from '../components/ProductCard';
 import { store } from '../data/mockState';
 
 export function renderHomePage(showLoader = false): string {
+  // Always read from the live store (localStorage-backed) so product IDs
+  // match what click handlers look up — never the static seed data directly.
+  const PRODUCTS_DATA = store.products;
+
   // Filter products by selected mood if active
   const moodFilteredProducts =
     store.activeMood === 'ALL'

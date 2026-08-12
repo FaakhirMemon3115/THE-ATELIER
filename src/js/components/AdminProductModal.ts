@@ -54,14 +54,33 @@ export function renderAdminProductModal(product: Product | null = null): string 
             </div>
             <div>
               <label class="form-label">Primary Image URL *</label>
-              <input type="text" id="prod-form-primary-img" value="${product?.primaryImage || '/images/hero_model.png'}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" required />
+              <div style="display:flex; gap:10px; align-items:center;">
+                <input type="text" id="prod-form-primary-img" list="product-image-options" value="${product?.primaryImage || '/images/hero_model.png'}" class="newsletter-input" style="flex:1; border: 1px solid var(--color-border); color: var(--color-black);" required />
+                <button type="button" id="prod-form-primary-file-btn" class="btn btn-outline" style="white-space:nowrap;">Choose file</button>
+              </div>
+              <input type="file" id="prod-form-primary-file" accept="image/*" style="display:none;" />
+              <div style="font-size: 0.72rem; color: var(--color-muted); margin-top: 4px;">Choose a built-in image, select a device file, or paste an external URL.</div>
             </div>
           </div>
 
           <div style="margin-bottom: 16px;">
             <label class="form-label">Secondary Hover Image URL</label>
-            <input type="text" id="prod-form-secondary-img" value="${product?.secondaryImage || '/images/shop_look_model.png'}" class="newsletter-input" style="width: 100%; border: 1px solid var(--color-border); color: var(--color-black);" />
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="text" id="prod-form-secondary-img" list="product-image-options" value="${product?.secondaryImage || '/images/shop_look_model.png'}" class="newsletter-input" style="flex:1; border: 1px solid var(--color-border); color: var(--color-black);" />
+              <button type="button" id="prod-form-secondary-file-btn" class="btn btn-outline" style="white-space:nowrap;">Choose file</button>
+            </div>
+            <input type="file" id="prod-form-secondary-file" accept="image/*" style="display:none;" />
+            <div style="font-size: 0.72rem; color: var(--color-muted); margin-top: 4px;">Choose a built-in image, select a device file, or paste an external URL.</div>
           </div>
+
+          <datalist id="product-image-options">
+            <option value="/images/hero_model.png"></option>
+            <option value="/images/shop_look_model.png"></option>
+            <option value="/images/designer_bag.png"></option>
+            <option value="/images/products/bag-1.png"></option>
+            <option value="/images/products/dress-1.png"></option>
+            <option value="/images/products/shoes-1.png"></option>
+          </datalist>
 
           <div style="margin-bottom: 16px;">
             <label class="form-label">Description *</label>

@@ -361,8 +361,17 @@ function renderHeroCustomizerTab(heroConfig: any): string {
         </div>
         <div class="admin-form-group">
           <label class="admin-form-label">Hero Banner Image URL</label>
-          <input type="text" id="hero-image-input" value="${heroConfig.imageUrl}" class="admin-form-input" required />
+          <input type="text" id="hero-image-input" list="hero-image-options" value="${heroConfig.imageUrl}" class="admin-form-input" required />
+          <div style="font-size: 0.82rem; color: var(--color-muted); margin-top: 6px;">Choose a built-in hero image or paste an external URL.</div>
         </div>
+        <datalist id="hero-image-options">
+          <option value="/images/hero_model.png"></option>
+          <option value="/images/shop_look_model.png"></option>
+          <option value="/images/designer_bag.png"></option>
+          <option value="/images/products/bag-1.png"></option>
+          <option value="/images/products/dress-1.png"></option>
+          <option value="/images/products/shoes-1.png"></option>
+        </datalist>
         <button type="submit" class="btn btn-gold" style="padding:10px 24px; margin-top:4px;">
           <i class="fa-solid fa-floppy-disk"></i> Save Hero Changes
         </button>

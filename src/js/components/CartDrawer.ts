@@ -20,11 +20,10 @@ export function renderCartDrawer(): string {
       <!-- Free Delivery Progress Bar -->
       <div class="free-shipping-bar">
         <div class="free-shipping-text">
-          ${
-            remainingForFree > 0
-              ? `🎁 Add <strong>Rs. ${remainingForFree.toLocaleString()}</strong> more to unlock <strong>FREE DELIVERY</strong>`
-              : `🎉 Congratulations! You have unlocked <strong>COMPLIMENTARY FREE DELIVERY</strong>`
-          }
+          ${remainingForFree > 0
+      ? `🎁 Add <strong>Rs. ${remainingForFree.toLocaleString()}</strong> more to unlock <strong>FREE DELIVERY</strong>`
+      : `🎉 Congratulations! You have unlocked <strong>COMPLIMENTARY FREE DELIVERY</strong>`
+    }
         </div>
         <div class="progress-track">
           <div class="progress-fill" style="width: ${progressPercent}%;"></div>
@@ -33,9 +32,8 @@ export function renderCartDrawer(): string {
 
       <!-- Cart Items Body -->
       <div class="cart-drawer-body">
-        ${
-          store.cart.length === 0
-            ? `
+        ${store.cart.length === 0
+      ? `
             <div style="text-align: center; padding: 60px 20px;">
               <i class="fa-solid fa-bag-shopping" style="font-size: 3rem; color: var(--color-border); margin-bottom: 16px;"></i>
               <h3 class="font-serif heading-3">YOUR BAG IS EMPTY</h3>
@@ -43,9 +41,9 @@ export function renderCartDrawer(): string {
               <button class="btn btn-primary" id="drawer-shop-now-btn">EXPLORE SHOP</button>
             </div>
             `
-            : store.cart
-                .map(
-                  (item) => `
+      : store.cart
+        .map(
+          (item) => `
             <div class="cart-item">
               <img src="${item.product.primaryImage}" alt="${item.product.name}" class="cart-item-img" />
               <div class="cart-item-details">
@@ -68,19 +66,18 @@ export function renderCartDrawer(): string {
               </div>
             </div>
           `
-                )
-                .join('')
-        }
+        )
+        .join('')
+    }
       </div>
 
       <!-- Footer Summary -->
-      ${
-        store.cart.length > 0
-          ? `
+      ${store.cart.length > 0
+      ? `
         <div class="cart-drawer-footer">
           <!-- Promo Code Input -->
           <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-            <input type="text" id="coupon-input-code" placeholder="Promo code (e.g. ATELIER10)" 
+            <input type="text" id="coupon-input-code" placeholder="Promo code" 
               value="${store.appliedCoupon ? store.appliedCoupon.code : ''}"
               style="flex: 1; padding: 10px 14px; border: 1px solid var(--color-border); font-size: 0.8rem; border-radius: var(--radius-sm);" />
             <button class="btn btn-gold" id="apply-coupon-btn" style="padding: 10px 16px;">APPLY</button>
@@ -91,16 +88,15 @@ export function renderCartDrawer(): string {
             <span>Rs. ${subtotal.toLocaleString()}</span>
           </div>
 
-          ${
-            discount > 0
-              ? `
+          ${discount > 0
+        ? `
             <div class="cart-summary-row text-gold">
               <span>Discount (${store.appliedCoupon?.code})</span>
               <span>- Rs. ${discount.toLocaleString()}</span>
             </div>
           `
-              : ''
-          }
+        : ''
+      }
 
           <div class="cart-summary-row">
             <span>Shipping Fee</span>
@@ -115,8 +111,8 @@ export function renderCartDrawer(): string {
           <button class="btn btn-primary btn-full" id="proceed-checkout-btn">PROCEED TO CHECKOUT</button>
         </div>
       `
-          : ''
-      }
+      : ''
+    }
     </aside>
   `;
 }

@@ -15,6 +15,7 @@ import type { FilterState } from './js/pages/ShopPage';
 import { renderCheckoutPage } from './js/pages/CheckoutPage';
 import { renderAccountPage } from './js/pages/AccountPage';
 import { renderAdminPage } from './js/pages/AdminPage';
+import { api, redirectToGateway } from './js/data/api';
 
 // Local UI State flags
 let isCartOpen = false;
@@ -34,6 +35,7 @@ let accountTab = 'orders';
 let adminTab = 'dashboard';
 let confirmedOrderData: Order | null = null;
 let hasBrandLoaded = false;
+let modalQuantity = 1;
 
 // Shop filter state
 let shopFilterState: FilterState = {
@@ -174,7 +176,7 @@ function renderApp() {
       ${renderCartDrawer()}
 
       <!-- Modals -->
-      ${store.selectedProductForModal ? renderProductModal() : ''}
+      ${store.selectedProductForModal ? renderProductModal(modalQuantity) : ''}
       ${isQuizOpen ? renderStyleDNAQuizModal(quizStep, quizAnswers) : ''}
       ${isSearchOpen ? renderSearchOverlay(searchQuery) : ''}
       ${isAuthModalOpen ? renderAuthModal(authActiveTab) : ''}
@@ -336,21 +338,12 @@ function attachEventHandlers() {
   // Login Form Submission
   const loginForm = document.getElementById('auth-login-form') as HTMLFormElement;
   if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = (document.getElementById('login-email') as HTMLInputElement).value.trim();
       const password = (document.getElementById('login-password') as HTMLInputElement).value.trim();
 
-      // Check Default Admin Credentials
-      if (email.toLowerCase() === 'atif@admin.com' && password === 'atif@access.com') {
-        store.login('atif@admin.com', 'ADMIN', 'Atelier Administrator');
-        isAuthModalOpen = false;
-        showToast('Admin authenticated successfully! Opening Dashboard...', 'fa-user-shield');
-        store.navigateTo('admin');
-        return;
-      }
-
-      const res = store.login(email, 'USER', email.split('@')[0]);
+      const res = await store.login(email, password);
       if (!res.success) {
         const alertBox = document.getElementById('auth-error-alert');
         if (alertBox) {
@@ -361,15 +354,19 @@ function attachEventHandlers() {
       }
 
       isAuthModalOpen = false;
-      showToast(res.message);
-      renderApp();
+      showToast(res.message, store.currentUser?.role === 'ADMIN' ? 'fa-user-shield' : undefined);
+      if (store.currentUser?.role === 'ADMIN') {
+        store.navigateTo('admin');
+      } else {
+        renderApp();
+      }
     });
   }
 
   // Registration Form Submission
   const registerForm = document.getElementById('auth-register-form') as HTMLFormElement;
   if (registerForm) {
-    registerForm.addEventListener('submit', (e) => {
+    registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = (document.getElementById('reg-name') as HTMLInputElement).value.trim();
       const email = (document.getElementById('reg-email') as HTMLInputElement).value.trim();
@@ -386,7 +383,7 @@ function attachEventHandlers() {
         return;
       }
 
-      const res = store.register(name, email, password);
+      const res = await store.register(name, email, password);
       if (!res.success) {
         if (alertBox) {
           alertBox.style.display = 'block';
@@ -404,12 +401,12 @@ function attachEventHandlers() {
   // Profile Edit Form Submission
   const editProfileForm = document.getElementById('edit-profile-form') as HTMLFormElement;
   if (editProfileForm) {
-    editProfileForm.addEventListener('submit', (e) => {
+    editProfileForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const newName = (document.getElementById('profile-edit-name') as HTMLInputElement).value.trim();
       const newAvatar = (document.getElementById('profile-edit-avatar') as HTMLInputElement).value.trim();
 
-      const res = store.updateUserProfile(newName, newAvatar);
+      const res = await store.updateUserProfile(newName, newAvatar);
       showToast(res.message);
       renderApp();
     });
@@ -418,7 +415,7 @@ function attachEventHandlers() {
   // Password Change Form Submission
   const changePassForm = document.getElementById('change-password-form') as HTMLFormElement;
   if (changePassForm) {
-    changePassForm.addEventListener('submit', (e) => {
+    changePassForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const oldPass = (document.getElementById('pass-old') as HTMLInputElement).value;
       const newPass = (document.getElementById('pass-new') as HTMLInputElement).value;
@@ -435,7 +432,7 @@ function attachEventHandlers() {
         return;
       }
 
-      const res = store.changeUserPassword(oldPass, newPass);
+      const res = await store.changeUserPassword(oldPass, newPass);
       showToast(res.message, res.success ? 'fa-circle-check' : 'fa-triangle-exclamation');
       if (res.success) {
         changePassForm.reset();
@@ -470,29 +467,61 @@ function attachEventHandlers() {
   }
 
   // Cart Item Quantity Adjusters
-  document.querySelectorAll('.cart-qty-plus').forEach((btn) => {
+  document.querySelectorAll('[data-cart-action="inc"]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-cart-id');
+      const id = btn.getAttribute('data-item-id');
       if (id) store.updateCartQuantity(id, 1);
     });
   });
 
-  document.querySelectorAll('.cart-qty-minus').forEach((btn) => {
+  document.querySelectorAll('[data-cart-action="dec"]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-cart-id');
+      const id = btn.getAttribute('data-item-id');
       if (id) store.updateCartQuantity(id, -1);
     });
   });
 
-  document.querySelectorAll('.cart-remove-item').forEach((btn) => {
+  document.querySelectorAll('[data-cart-action="remove"]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-cart-id');
+      const id = btn.getAttribute('data-item-id');
       if (id) {
         store.removeFromCart(id);
         showToast('Item removed from Atelier bag.');
       }
     });
   });
+
+  // User Menu Button
+  const userMenuBtn = document.getElementById('user-menu-btn');
+  if (userMenuBtn) {
+    userMenuBtn.addEventListener('click', () => {
+      store.navigateTo('account');
+    });
+  }
+
+  // Wishlist Button (Navbar)
+  const openWishlistBtn = document.getElementById('open-wishlist-btn');
+  if (openWishlistBtn) {
+    openWishlistBtn.addEventListener('click', () => {
+      if (!store.currentUser) {
+        isAuthModalOpen = true;
+        authActiveTab = 'login';
+        showToast('Please sign in or create an account first.', 'fa-user-lock');
+        renderApp();
+        return;
+      }
+      accountTab = 'wishlist';
+      store.navigateTo('account');
+    });
+  }
+
+  // Admin Exit Button
+  const adminExitBtn = document.getElementById('admin-exit-btn');
+  if (adminExitBtn) {
+    adminExitBtn.addEventListener('click', () => {
+      store.navigateTo('home');
+    });
+  }
 
   // Proceed to Checkout Button (Cart Drawer)
   const proceedCheckoutBtn = document.getElementById('proceed-checkout-btn');
@@ -513,24 +542,27 @@ function attachEventHandlers() {
 
   // Product Card Quick Add & Wishlist & Modal Triggers
   document.querySelectorAll('.product-card').forEach((card) => {
-    const prodId = card.getAttribute('data-prod-id');
+    const prodId = card.getAttribute('data-product-id');
     const product = store.products.find((p) => p.id === prodId);
 
     if (product) {
-      card.querySelectorAll('.product-img-wrap, .product-title').forEach((el) => {
-        el.addEventListener('click', () => store.openProductModal(product));
+      card.querySelectorAll('[data-action="open-detail"]').forEach((el) => {
+        el.addEventListener('click', () => {
+          modalQuantity = 1;
+          store.openProductModal(product);
+        });
       });
 
-      const addBtn = card.querySelector('.btn-quick-add');
+      const addBtn = card.querySelector('[data-action="quick-add"]');
       if (addBtn) {
         addBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          store.addToCart(product, 1);
+          store.addToCart(product, 1, product.sizes[0], product.colors[0]?.name || 'Default');
           showToast(`Added ${product.name} to Atelier bag!`);
         });
       }
 
-      const wishBtn = card.querySelector('.btn-wishlist');
+      const wishBtn = card.querySelector('[data-action="wishlist"]');
       if (wishBtn) {
         wishBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -544,6 +576,7 @@ function attachEventHandlers() {
           store.toggleWishlist(product.id);
           const isWishlisted = store.wishlist.includes(product.id);
           showToast(isWishlisted ? 'Saved to your Wishlist!' : 'Removed from Wishlist.');
+          renderApp();
         });
       }
     }
@@ -562,18 +595,117 @@ function attachEventHandlers() {
     });
   }
 
+  // Modal — Size chip selection
+  document.querySelectorAll('#modal-size-chips .size-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#modal-size-chips .size-chip').forEach((c) => c.classList.remove('selected'));
+      chip.classList.add('selected');
+    });
+  });
+
+  // Modal — Color swatch selection (also swaps the main gallery image if the color has one)
+  document.querySelectorAll('.product-detail-modal .color-swatch').forEach((swatch) => {
+    swatch.addEventListener('click', () => {
+      document.querySelectorAll('.product-detail-modal .color-swatch').forEach((s) => s.classList.remove('selected'));
+      swatch.classList.add('selected');
+
+      const colorName = swatch.getAttribute('data-color');
+      const colorImage = swatch.getAttribute('data-color-image');
+      const label = document.getElementById('selected-color-label');
+      if (label && colorName) label.textContent = colorName;
+
+      const mainImg = document.getElementById('modal-main-image') as HTMLImageElement;
+      if (mainImg && colorImage) mainImg.src = colorImage;
+    });
+  });
+
+  // Modal — Gallery thumbnail click
+  document.querySelectorAll('.product-detail-modal .thumb-img').forEach((thumb) => {
+    thumb.addEventListener('click', () => {
+      document.querySelectorAll('.product-detail-modal .thumb-img').forEach((t) => t.classList.remove('active'));
+      thumb.classList.add('active');
+      const src = thumb.getAttribute('data-thumb');
+      const mainImg = document.getElementById('modal-main-image') as HTMLImageElement;
+      if (mainImg && src) mainImg.src = src;
+    });
+  });
+
+  // Modal — Quantity stepper
+  const modalQtyVal = document.getElementById('modal-qty-val');
+  const modalQtyPlus = document.getElementById('modal-qty-plus');
+  const modalQtyMinus = document.getElementById('modal-qty-minus');
+  if (modalQtyPlus && modalQtyVal) {
+    modalQtyPlus.addEventListener('click', () => {
+      modalQuantity++;
+      modalQtyVal.textContent = String(modalQuantity);
+    });
+  }
+  if (modalQtyMinus && modalQtyVal) {
+    modalQtyMinus.addEventListener('click', () => {
+      if (modalQuantity > 1) {
+        modalQuantity--;
+        modalQtyVal.textContent = String(modalQuantity);
+      }
+    });
+  }
+
+  // Modal — Wishlist toggle
+  const modalWishlistBtn = document.getElementById('modal-wishlist-btn');
+  if (modalWishlistBtn && store.selectedProductForModal) {
+    modalWishlistBtn.addEventListener('click', () => {
+      const product = store.selectedProductForModal!;
+      if (!store.currentUser) {
+        isAuthModalOpen = true;
+        authActiveTab = 'login';
+        showToast('Please sign in to save items to your wishlist.', 'fa-user-lock');
+        renderApp();
+        return;
+      }
+      store.toggleWishlist(product.id);
+      const isWishlisted = store.wishlist.includes(product.id);
+      showToast(isWishlisted ? 'Saved to your Wishlist!' : 'Removed from Wishlist.');
+      renderApp();
+    });
+  }
+
   const modalAddCartBtn = document.getElementById('modal-add-to-cart-btn');
   if (modalAddCartBtn && store.selectedProductForModal) {
     modalAddCartBtn.addEventListener('click', () => {
+      const product = store.selectedProductForModal!;
       const selectedSize = document.querySelector('#modal-size-chips .size-chip.selected')?.getAttribute('data-size') || 'S';
-      const selectedColor = document.querySelector('.color-swatch.selected')?.getAttribute('data-color') || 'Default';
-      const qtyVal = parseInt(document.getElementById('modal-qty-val')?.textContent || '1', 10);
+      const selectedColor = document.querySelector('.product-detail-modal .color-swatch.selected')?.getAttribute('data-color') || 'Default';
+      const qtyVal = modalQuantity;
 
-      store.addToCart(store.selectedProductForModal!, qtyVal, selectedSize, selectedColor);
+      store.addToCart(product, qtyVal, selectedSize, selectedColor);
       store.closeProductModal();
       isCartOpen = true;
-      showToast(`Added ${store.selectedProductForModal!.name} to bag!`);
+      showToast(`Added ${product.name} to bag!`);
       renderApp();
+    });
+  }
+
+  // Modal — Buy Now (adds to cart then jumps straight to checkout)
+  const modalBuyNowBtn = document.getElementById('modal-buy-now-btn');
+  if (modalBuyNowBtn && store.selectedProductForModal) {
+    modalBuyNowBtn.addEventListener('click', () => {
+      const product = store.selectedProductForModal!;
+      const selectedSize = document.querySelector('#modal-size-chips .size-chip.selected')?.getAttribute('data-size') || 'S';
+      const selectedColor = document.querySelector('.product-detail-modal .color-swatch.selected')?.getAttribute('data-color') || 'Default';
+      const qtyVal = modalQuantity;
+
+      store.addToCart(product, qtyVal, selectedSize, selectedColor);
+      store.closeProductModal();
+
+      if (!store.currentUser) {
+        isAuthModalOpen = true;
+        authActiveTab = 'login';
+        showToast('Please sign in or create an account to checkout.', 'fa-user-lock');
+        renderApp();
+        return;
+      }
+
+      confirmedOrderData = null;
+      store.navigateTo('checkout');
     });
   }
 
@@ -624,6 +756,14 @@ function attachEventHandlers() {
     });
   }
 
+  // Day / Night Atmospheric Ambiance Slider (Home page)
+  const dayNightSlider = document.getElementById('day-night-slider') as HTMLInputElement;
+  if (dayNightSlider) {
+    dayNightSlider.addEventListener('input', () => {
+      store.setDayNightTime(parseInt(dayNightSlider.value, 10));
+    });
+  }
+
   const sortSelect = document.getElementById('shop-sort-select') as HTMLSelectElement;
   if (sortSelect) {
     sortSelect.addEventListener('change', () => {
@@ -669,16 +809,35 @@ function attachEventHandlers() {
     });
   }
 
+  // Payment method toggle → show/hide the wallet mobile number field
+  document.querySelectorAll('input[name="payment-method"]').forEach((radio) => {
+    radio.addEventListener('change', () => {
+      const walletField = document.getElementById('wallet-mobile-field');
+      const selected = (document.querySelector('input[name="payment-method"]:checked') as HTMLInputElement)?.value;
+      if (walletField) {
+        walletField.style.display = selected === 'JazzCash' || selected === 'EasyPaisa' ? 'block' : 'none';
+      }
+    });
+  });
+
   // Checkout Form Submission (Place Order)
   const checkoutForm = document.getElementById('checkout-form') as HTMLFormElement;
   if (checkoutForm) {
-    checkoutForm.addEventListener('submit', (e) => {
+    checkoutForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = (document.getElementById('checkout-name') as HTMLInputElement).value.trim();
       const email = (document.getElementById('checkout-email') as HTMLInputElement).value.trim();
       const phone = (document.getElementById('checkout-phone') as HTMLInputElement).value.trim();
       const address = (document.getElementById('checkout-address') as HTMLInputElement).value.trim();
       const city = (document.getElementById('checkout-city') as HTMLInputElement).value.trim();
+      const zip = (document.getElementById('checkout-zip') as HTMLInputElement)?.value.trim();
+      const paymentMethod = (document.querySelector('input[name="payment-method"]:checked') as HTMLInputElement)?.value || 'Cash on Delivery';
+      const walletMobile = (document.getElementById('checkout-wallet-mobile') as HTMLInputElement)?.value.trim();
+
+      if ((paymentMethod === 'JazzCash' || paymentMethod === 'EasyPaisa') && !walletMobile) {
+        showToast('Please enter your mobile wallet number.', 'fa-triangle-exclamation');
+        return;
+      }
 
       const orderItems = store.cart.map((ci) => ({
         productId: ci.product.id,
@@ -695,21 +854,81 @@ function attachEventHandlers() {
       const shipping = store.getShippingFee();
       const total = store.getCartTotal();
 
-      const newOrder = store.placeOrder({
-        customerName: name,
-        customerEmail: email,
-        items: orderItems,
-        subtotal,
-        discount,
-        shipping,
-        total,
-        paymentMethod: 'Cash on Delivery',
-        shippingAddress: `${address}, ${city} (Phone: ${phone})`
-      });
+      const submitBtn = checkoutForm.querySelector('button[type="submit"]') as HTMLButtonElement;
 
-      confirmedOrderData = newOrder;
-      showToast(`Order #${newOrder.id} successfully placed!`, 'fa-circle-check');
-      renderApp();
+      // ── JazzCash / EasyPaisa → real gateway redirect ──
+      if (paymentMethod === 'JazzCash' || paymentMethod === 'EasyPaisa') {
+        try {
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Redirecting to ${paymentMethod}...`;
+          }
+
+          // 1. Create the order in MySQL via the backend (server re-prices from DB)
+          const backendOrder = await api.placeOrder({
+            customerName: name,
+            customerEmail: email,
+            customerPhone: phone,
+            address,
+            city,
+            postalCode: zip,
+            items: orderItems.map((i) => ({ productId: i.productId, quantity: i.quantity, selectedSize: i.selectedSize, selectedColor: i.selectedColor })),
+            couponCode: store.appliedCoupon?.code,
+            paymentMethod,
+            userId: store.currentUser?.id
+          });
+
+          // 2. Ask the backend to build a signed JazzCash/EasyPaisa payment request
+          const { gatewayUrl, params } =
+            paymentMethod === 'JazzCash'
+              ? await api.initiateJazzCash(backendOrder.id, walletMobile)
+              : await api.initiateEasyPaisa(backendOrder.id);
+
+          // 3. Redirect the browser to the gateway's hosted payment page.
+          //    (JazzCash/EasyPaisa will redirect back to our server, which
+          //    then redirects to this app with ?payment=success|failed)
+          redirectToGateway(gatewayUrl, params);
+        } catch (err: any) {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i class="fa-solid fa-lock"></i> PLACE ORDER (RS. ${total.toLocaleString()})`;
+          }
+          showToast(
+            err?.message?.includes('fetch') || err?.message?.includes('Failed to fetch')
+              ? 'Cannot reach payment server. Make sure the backend is running (see server/README).'
+              : err?.message || 'Payment could not be started. Please try again.',
+            'fa-triangle-exclamation'
+          );
+        }
+        return;
+      }
+
+      // ── Cash on Delivery → create order via API (database only) ──
+      try {
+        const newOrder = await store.placeOrder({
+          customerName: name,
+          customerEmail: email,
+          items: orderItems,
+          subtotal,
+          discount,
+          shipping,
+          total,
+          paymentMethod: 'Cash on Delivery',
+          shippingAddress: `${address}, ${city} (Phone: ${phone})`
+        });
+
+        confirmedOrderData = newOrder;
+        showToast(`Order #${newOrder.id} successfully placed!`, 'fa-circle-check');
+        renderApp();
+      } catch (err: any) {
+        console.error('❌ Order placement failed:', err);
+        showToast(
+          err?.message?.includes('fetch') || err?.message?.includes('Failed to fetch')
+            ? 'Cannot reach database server. Make sure the backend is running (see server/README).'
+            : err?.message || 'Order could not be placed. Please try again.',
+          'fa-triangle-exclamation'
+        );
+      }
     });
   }
 
@@ -726,34 +945,46 @@ function attachEventHandlers() {
 
   // Admin User Ban / Unban / Remove Handlers
   document.querySelectorAll('.btn-ban-user').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-user-id');
       if (id && confirm('Ban this user from logging in and accessing the platform?')) {
-        store.banUser(id);
-        showToast('User has been banned.', 'fa-user-slash');
-        renderApp();
+        try {
+          await store.banUser(id);
+          showToast('User has been banned.', 'fa-user-slash');
+          renderApp();
+        } catch (err: any) {
+          showToast(err?.message || 'Failed to ban user. Backend may be offline.', 'fa-triangle-exclamation');
+        }
       }
     });
   });
 
   document.querySelectorAll('.btn-unban-user').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-user-id');
       if (id) {
-        store.unbanUser(id);
-        showToast('User access restored.');
-        renderApp();
+        try {
+          await store.unbanUser(id);
+          showToast('User access restored.');
+          renderApp();
+        } catch (err: any) {
+          showToast(err?.message || 'Failed to unban user. Backend may be offline.', 'fa-triangle-exclamation');
+        }
       }
     });
   });
 
   document.querySelectorAll('.btn-remove-user').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-user-id');
       if (id && confirm('Permanently remove this user record?')) {
-        store.removeUser(id);
-        showToast('User removed from database.');
-        renderApp();
+        try {
+          await store.removeUser(id);
+          showToast('User removed from database.');
+          renderApp();
+        } catch (err: any) {
+          showToast(err?.message || 'Failed to remove user. Backend may be offline.', 'fa-triangle-exclamation');
+        }
       }
     });
   });
@@ -761,16 +992,26 @@ function attachEventHandlers() {
   // Hero Bar Customizer Form
   const heroForm = document.getElementById('hero-customizer-form') as HTMLFormElement;
   if (heroForm) {
-    heroForm.addEventListener('submit', (e) => {
+    heroForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const title = (document.getElementById('hero-title-input') as HTMLInputElement).value;
       const subtitle = (document.getElementById('hero-subtitle-input') as HTMLInputElement).value;
       const tagline = (document.getElementById('hero-tagline-input') as HTMLInputElement).value;
       const imageUrl = (document.getElementById('hero-image-input') as HTMLInputElement).value;
 
-      store.updateHeroBanner({ title, subtitle, tagline, imageUrl });
-      showToast('Hero Bar Banner updated live on Homepage!');
-      renderApp();
+      try {
+        await store.updateHeroBanner({ title, subtitle, tagline, imageUrl });
+        showToast('Hero Bar Banner updated in database!');
+        renderApp();
+      } catch (err: any) {
+        console.error('Hero update failed:', err);
+        showToast(
+          err?.message?.includes('fetch') || err?.message?.includes('Failed to fetch')
+            ? 'Cannot reach database. Backend must be running.'
+            : err?.message || 'Hero update failed. Please try again.',
+          'fa-triangle-exclamation'
+        );
+      }
     });
   }
 
@@ -826,7 +1067,7 @@ function attachEventHandlers() {
   // Admin Product Modal Form Submit (Create / Edit CRUD Database)
   const adminProdForm = document.getElementById('admin-product-form') as HTMLFormElement;
   if (adminProdForm) {
-    adminProdForm.addEventListener('submit', (e) => {
+    adminProdForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = (document.getElementById('prod-form-id') as HTMLInputElement).value;
       const name = (document.getElementById('prod-form-name') as HTMLInputElement).value.trim();
@@ -842,7 +1083,7 @@ function attachEventHandlers() {
       const care = (document.getElementById('prod-form-care') as HTMLInputElement).value.trim();
 
       if (id) {
-        // Update existing product
+        // Update existing product: persist to backend first so homepage reflects DB state.
         const existing = store.products.find((p) => p.id === id);
         if (existing) {
           const updatedProd: Product = {
@@ -859,11 +1100,18 @@ function attachEventHandlers() {
             material: material || existing.material,
             care: care || existing.care
           };
-          store.updateProduct(updatedProd);
-          showToast(`Updated product "${name}" in database.`);
+          try {
+            const backendUpdated = await api.updateProduct(updatedProd.id, updatedProd);
+            store.updateProduct(backendUpdated);
+            showToast(`Updated product "${name}" in database.`);
+          } catch (err) {
+            console.error('Product update backend failed:', err);
+            showToast(`Failed to update "${name}" in database.`, 'fa-triangle-exclamation');
+            return;
+          }
         }
       } else {
-        // Create new product
+        // Create new product: save to backend first, then add local store copy.
         const newProd: Product = {
           id: `prod-${Date.now()}`,
           sku,
@@ -886,37 +1134,96 @@ function attachEventHandlers() {
           isDay: true,
           isNight: true
         };
-        store.addProduct(newProd);
-        showToast(`Created new product "${name}" in database!`);
+        try {
+          const createdProd = await api.createProduct(newProd);
+          store.addProduct(createdProd);
+          showToast(`Created new product "${name}" in database!`);
+        } catch (err) {
+          console.error('Product creation backend failed:', err);
+          showToast(`Failed to save "${name}" to database.`, 'fa-triangle-exclamation');
+          return;
+        }
       }
 
       isAdminProdModalOpen = false;
       renderApp();
     });
+
+    const primaryFileBtn = document.getElementById('prod-form-primary-file-btn');
+    const secondaryFileBtn = document.getElementById('prod-form-secondary-file-btn');
+    const primaryFileInput = document.getElementById('prod-form-primary-file') as HTMLInputElement | null;
+    const secondaryFileInput = document.getElementById('prod-form-secondary-file') as HTMLInputElement | null;
+
+    if (primaryFileBtn && primaryFileInput) {
+      primaryFileBtn.addEventListener('click', () => primaryFileInput.click());
+      primaryFileInput.addEventListener('change', () => {
+        if (!primaryFileInput.files?.length) return;
+        const file = primaryFileInput.files[0];
+        const blobUrl = URL.createObjectURL(file);
+        const input = document.getElementById('prod-form-primary-img') as HTMLInputElement | null;
+        if (input) input.value = blobUrl;
+      });
+    }
+
+    if (secondaryFileBtn && secondaryFileInput) {
+      secondaryFileBtn.addEventListener('click', () => secondaryFileInput.click());
+      secondaryFileInput.addEventListener('change', () => {
+        if (!secondaryFileInput.files?.length) return;
+        const file = secondaryFileInput.files[0];
+        const blobUrl = URL.createObjectURL(file);
+        const input = document.getElementById('prod-form-secondary-img') as HTMLInputElement | null;
+        if (input) input.value = blobUrl;
+      });
+    }
   }
 
   // Admin Product Delete
   document.querySelectorAll('.btn-del-prod').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-prod-id');
       if (id && confirm('Are you sure you want to delete this product from database?')) {
-        store.deleteProduct(id);
-        showToast('Product deleted from database.');
-        renderApp();
+        try {
+          await store.deleteProduct(id);
+          showToast('Product deleted from database.');
+          renderApp();
+        } catch (err: any) {
+          console.error('Product deletion failed:', err);
+          showToast(
+            err?.message?.includes('fetch') || err?.message?.includes('Failed to fetch')
+              ? 'Cannot reach database. Backend must be running.'
+              : err?.message || 'Failed to delete product. Please try again.',
+            'fa-triangle-exclamation'
+          );
+        }
       }
     });
   });
 
-  // Admin Restock
-  document.querySelectorAll('.btn-restock').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-prod-id');
+  // Admin Restock (form submit)
+  document.querySelectorAll('.restock-form').forEach((form) => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = form.getAttribute('data-prod-id');
+      const qtyInput = form.querySelector('.restock-qty-input') as HTMLInputElement;
+      const qty = parseInt(qtyInput?.value || '20', 10);
+      
       const prod = store.products.find((p) => p.id === id);
-      if (prod) {
-        prod.stock += 20;
-        store.updateProduct(prod);
-        showToast(`Added +20 stock units to ${prod.name}!`);
-        renderApp();
+      if (prod && id) {
+        try {
+          await api.restockProduct(prod.id, qty);
+          prod.stock += qty;
+          store.updateProduct(prod);
+          showToast(`Added +${qty} stock units to ${prod.name}!`);
+          renderApp();
+        } catch (err: any) {
+          console.error('Restock failed:', err);
+          showToast(
+            err?.message?.includes('fetch') || err?.message?.includes('Failed to fetch')
+              ? 'Cannot reach database. Backend must be running.'
+              : err?.message || 'Restock failed. Please try again.',
+            'fa-triangle-exclamation'
+          );
+        }
       }
     });
   });
@@ -924,42 +1231,95 @@ function attachEventHandlers() {
   // Coupon Creation & Deletion
   const addCouponForm = document.getElementById('add-coupon-form') as HTMLFormElement;
   if (addCouponForm) {
-    addCouponForm.addEventListener('submit', (e) => {
+    addCouponForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const code = (document.getElementById('new-coupon-code') as HTMLInputElement).value.trim();
       const discount = parseInt((document.getElementById('new-coupon-discount') as HTMLInputElement).value, 10);
       if (code && discount) {
-        store.addCoupon(code, discount);
-        showToast(`Coupon code ${code} created in database!`);
-        renderApp();
+        try {
+          await store.addCoupon(code, discount);
+          showToast(`Coupon code ${code} created in database!`);
+          renderApp();
+        } catch (err: any) {
+          console.error('Coupon creation failed:', err);
+          showToast(
+            err?.message?.includes('fetch') || err?.message?.includes('Failed to fetch')
+              ? 'Cannot reach database. Backend must be running.'
+              : err?.message || 'Coupon creation failed. Please try again.',
+            'fa-triangle-exclamation'
+          );
+        }
       }
     });
   }
 
   document.querySelectorAll('.btn-del-coupon').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const code = btn.getAttribute('data-code');
       if (code) {
-        store.deleteCoupon(code);
-        showToast(`Coupon ${code} deleted.`);
-        renderApp();
+        try {
+          await store.deleteCoupon(code);
+          showToast(`Coupon ${code} deleted.`);
+          renderApp();
+        } catch (err: any) {
+          console.error('Coupon deletion failed:', err);
+          showToast(
+            err?.message?.includes('fetch') || err?.message?.includes('Failed to fetch')
+              ? 'Cannot reach database. Backend must be running.'
+              : err?.message || 'Coupon deletion failed. Please try again.',
+            'fa-triangle-exclamation'
+          );
+        }
       }
     });
   });
 
   // Order Status Updater
   document.querySelectorAll('.order-status-select').forEach((select) => {
-    select.addEventListener('change', (e) => {
+    select.addEventListener('change', async (e) => {
       const orderId = select.getAttribute('data-order-id');
       const newStatus = (e.target as HTMLSelectElement).value as Order['status'];
       if (orderId && newStatus) {
-        store.updateOrderStatus(orderId, newStatus);
-        showToast(`Order #${orderId} status changed to ${newStatus}.`);
+        try {
+          await store.updateOrderStatus(orderId, newStatus);
+          showToast(`Order #${orderId} status changed to ${newStatus}.`);
+        } catch (err: any) {
+          console.error('Order status update failed:', err);
+          showToast(
+            err?.message?.includes('fetch') || err?.message?.includes('Failed to fetch')
+              ? 'Cannot reach database. Backend must be running.'
+              : err?.message || 'Status update failed. Please try again.',
+            'fa-triangle-exclamation'
+          );
+        }
       }
     });
   });
 }
 
+// Handle JazzCash/EasyPaisa return redirect (?payment=success|failed&order=...&provider=...)
+function handlePaymentRedirectResult() {
+  const url = new URL(window.location.href);
+  const payment = url.searchParams.get('payment');
+  const orderId = url.searchParams.get('order');
+  const provider = url.searchParams.get('provider');
+  if (!payment) return;
+
+  if (payment === 'success') {
+    showToast(`${provider === 'easypaisa' ? 'EasyPaisa' : 'JazzCash'} payment successful for order #${orderId}!`, 'fa-circle-check');
+  } else {
+    showToast(`${provider === 'easypaisa' ? 'EasyPaisa' : 'JazzCash'} payment failed or was cancelled for order #${orderId}.`, 'fa-triangle-exclamation');
+  }
+
+  // Clean the query string so a page refresh doesn't re-show the toast
+  url.searchParams.delete('payment');
+  url.searchParams.delete('order');
+  url.searchParams.delete('provider');
+  window.history.replaceState({}, '', url.pathname + url.hash);
+}
+
 // Initial Subscribe & Render
-store.subscribe(() => renderApp());
-renderApp();
+  store.subscribe(() => renderApp());
+  renderApp();
+  handlePaymentRedirectResult();
+  store.initializeStore();

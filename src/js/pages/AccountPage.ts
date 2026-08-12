@@ -1,11 +1,10 @@
 import { store } from '../data/mockState';
-import { PRODUCTS_DATA } from '../data/products';
 import { renderProductCard } from '../components/ProductCard';
 
 export function renderAccountPage(activeTab = 'orders'): string {
   const user = store.currentUser;
   const userOrders = store.getUserOrders();
-  const wishlistedProducts = PRODUCTS_DATA.filter((p) => store.wishlist.includes(p.id));
+  const wishlistedProducts = store.products.filter((p) => store.wishlist.includes(p.id));
 
   return `
     <div class="account-container" style="padding: var(--space-2xl) 0 var(--space-3xl);">

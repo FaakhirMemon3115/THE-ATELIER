@@ -1,6 +1,7 @@
 import { db } from './db';
 import type { Product } from './products';
 import type { Order, Coupon, User, HeroBannerConfig } from './types';
+import { api, setAuthToken } from './api';
 
 export type { Product, Order, Coupon, User, HeroBannerConfig };
 
@@ -26,6 +27,53 @@ class Store {
 
   constructor() {
     this.loadSessionFromStorage();
+  }
+
+  public async initializeStore() {
+    // MANDATORY API CALL — no offline fallback
+    try {
+      await api.health();
+    } catch (e) {
+      console.error('❌ API unreachable. Backend must be running on http://localhost:4000');
+      throw e;
+    }
+
+    const token = localStorage.getItem('atelier_auth_token');
+    if (token) {
+      try {
+        const user = await api.me();
+        this.currentUser = user;
+        localStorage.setItem('atelier_session_user', JSON.stringify(this.currentUser));
+      } catch (err) {
+        console.error('Session restoration failed:', err);
+        this.logout();
+      }
+    }
+
+    // Fetch ALL data from API — NO FALLBACK TO MOCK DATA
+    const backendProds = await api.getProducts();
+    db.setProducts(backendProds);
+
+    const backendCoupons = await api.getCoupons();
+    const mapped = backendCoupons.map((c: any) => ({
+      code: c.code,
+      discountPercent: c.discountPercent || c.discount_percent,
+      isUsed: c.isUsed || c.is_used === 1 || c.is_used === true,
+      usedByEmail: c.usedByEmail || c.used_by_email
+    }));
+    db.setCoupons(mapped);
+
+    const backendHero = await api.getHero();
+    if (backendHero) {
+      db.updateHero(backendHero);
+    }
+
+    if (this.currentUser) {
+      const backendOrders = await api.getOrders();
+      db.setOrders(backendOrders);
+    }
+
+    this.notify();
   }
 
   private loadSessionFromStorage() {
@@ -103,78 +151,55 @@ class Store {
   }
 
   // --- Auth & User Database Sync ---
-  public login(email: string, role: 'USER' | 'ADMIN' = 'USER', name = 'Valued Client'): { success: boolean; message: string } {
-    const users = db.getUsers();
-    const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-
-    if (existing?.isBanned) {
-      return { success: false, message: 'This account has been banned by Administrator.' };
+  public async login(email: string, password: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const res = await api.login(email, password);
+      setAuthToken(res.token);
+      this.currentUser = res.user;
+      localStorage.setItem('atelier_session_user', JSON.stringify(res.user));
+      this.notify();
+      return { success: true, message: `Welcome back, ${res.user.name}!` };
+    } catch (e: any) {
+      console.error('❌ Login failed (API required):', e.message);
+      return { success: false, message: e.message || 'Login failed. Backend must be running.' };
     }
-
-    const loginTime = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-    if (existing) {
-      existing.lastLoginAt = loginTime;
-      db.updateUser(existing);
-      this.currentUser = { ...existing };
-    } else {
-      const newUser: User = {
-        id: `usr-${Date.now()}`,
-        email,
-        name,
-        role,
-        avatar: '/images/hero_model.png',
-        registeredAt: loginTime,
-        lastLoginAt: loginTime,
-        isBanned: false
-      };
-      db.addUser(newUser);
-      this.currentUser = { ...newUser };
-    }
-
-    this.notify();
-    return { success: true, message: `Welcome ${this.currentUser.name}!` };
   }
 
-  public register(name: string, email: string, password: string): { success: boolean; message: string } {
-    const users = db.getUsers();
-    const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (existing) {
-      return { success: false, message: 'An account with this email address already exists.' };
+  public async register(name: string, email: string, password: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const res = await api.register(name, email, password);
+      setAuthToken(res.token);
+      this.currentUser = res.user;
+      localStorage.setItem('atelier_session_user', JSON.stringify(res.user));
+      this.notify();
+      return { success: true, message: `Account created successfully. Welcome ${name}!` };
+    } catch (e: any) {
+      console.error('❌ Registration failed (API required):', e.message);
+      return { success: false, message: e.message || 'Registration failed. Backend must be running.' };
     }
-
-    const regTime = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const newUser: User = {
-      id: `usr-${Date.now()}`,
-      email,
-      name,
-      role: 'USER',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-      registeredAt: regTime,
-      lastLoginAt: regTime,
-      isBanned: false,
-      password
-    };
-
-    db.addUser(newUser);
-    this.currentUser = { ...newUser };
-    this.notify();
-    return { success: true, message: `Account created successfully. Welcome ${name}!` };
   }
 
   public logout() {
+    setAuthToken(null);
     this.currentUser = null;
+    localStorage.removeItem('atelier_session_user');
     if (this.activeRoute === 'admin' || this.activeRoute === 'account') {
       this.activeRoute = 'home';
     }
     this.notify();
   }
 
-  public updateUserProfile(name: string, avatarUrl?: string): { success: boolean; message: string } {
+  public async updateUserProfile(name: string, avatarUrl?: string): Promise<{ success: boolean; message: string }> {
     if (!this.currentUser) return { success: false, message: 'No active session.' };
 
-    this.currentUser.name = name;
-    if (avatarUrl) this.currentUser.avatar = avatarUrl;
+    try {
+      const updatedUser = await api.updateProfile(name, avatarUrl);
+      this.currentUser = { ...this.currentUser, ...updatedUser };
+    } catch (e: any) {
+      console.warn('API profile update failed, using local DB:', e.message);
+      this.currentUser!.name = name;
+      if (avatarUrl) this.currentUser!.avatar = avatarUrl;
+    }
 
     const user = db.getUsers().find((u) => u.id === this.currentUser?.id);
     if (user) {
@@ -182,61 +207,100 @@ class Store {
       if (avatarUrl) user.avatar = avatarUrl;
       db.updateUser(user);
     }
-
     this.notify();
     return { success: true, message: 'Profile updated successfully!' };
   }
 
-  public changeUserPassword(oldPass: string, newPass: string): { success: boolean; message: string } {
+  public async changeUserPassword(oldPass: string, newPass: string): Promise<{ success: boolean; message: string }> {
     if (!this.currentUser) return { success: false, message: 'No active session.' };
+
+    try {
+      await api.changePassword(oldPass, newPass);
+    } catch (e: any) {
+      console.warn('API change password failed, using local DB:', e.message);
+      if (e.message.includes('Incorrect current password')) {
+        return { success: false, message: 'Current password is incorrect.' };
+      }
+      
+      const user = db.getUsers().find((u) => u.id === this.currentUser?.id);
+      if (user) {
+        if (user.password && user.password !== oldPass) {
+          return { success: false, message: 'Current password is incorrect.' };
+        }
+        user.password = newPass;
+        db.updateUser(user);
+        this.currentUser.password = newPass;
+        this.notify();
+        return { success: true, message: 'Password updated successfully!' };
+      }
+    }
 
     const user = db.getUsers().find((u) => u.id === this.currentUser?.id);
     if (user) {
-      if (user.password && user.password !== oldPass) {
-        return { success: false, message: 'Current password is incorrect.' };
-      }
       user.password = newPass;
       db.updateUser(user);
+    }
+    if (this.currentUser) {
       this.currentUser.password = newPass;
-      this.notify();
-      return { success: true, message: 'Password updated successfully!' };
     }
-    return { success: false, message: 'User record not found.' };
+    this.notify();
+    return { success: true, message: 'Password updated successfully!' };
   }
 
-  public banUser(userId: string) {
-    const user = db.getUsers().find((u) => u.id === userId);
-    if (user && user.role !== 'ADMIN') {
-      user.isBanned = true;
-      db.updateUser(user);
-      if (this.currentUser?.id === userId) this.logout();
-      else this.notify();
-    }
-  }
-
-  public unbanUser(userId: string) {
-    const user = db.getUsers().find((u) => u.id === userId);
-    if (user) {
-      user.isBanned = false;
-      db.updateUser(user);
-      this.notify();
+  public async banUser(userId: string) {
+    try {
+      await api.banUser(userId, true);
+      const user = db.getUsers().find((u) => u.id === userId);
+      if (user) {
+        user.isBanned = true;
+        db.updateUser(user);
+        if (this.currentUser?.id === userId) this.logout();
+        else this.notify();
+      }
+    } catch (e) {
+      console.error('❌ Ban failed (API required):', e);
+      throw e;
     }
   }
 
-  public removeUser(userId: string) {
-    const user = db.getUsers().find((u) => u.id === userId);
-    if (user && user.role !== 'ADMIN') {
+  public async unbanUser(userId: string) {
+    try {
+      await api.banUser(userId, false);
+      const user = db.getUsers().find((u) => u.id === userId);
+      if (user) {
+        user.isBanned = false;
+        db.updateUser(user);
+        this.notify();
+      }
+    } catch (e) {
+      console.error('❌ Unban failed (API required):', e);
+      throw e;
+    }
+  }
+
+  public async removeUser(userId: string) {
+    try {
+      await api.deleteUser(userId);
       db.deleteUser(userId);
       if (this.currentUser?.id === userId) this.logout();
       else this.notify();
+    } catch (e) {
+      console.error('❌ Remove user failed (API required):', e);
+      throw e;
     }
   }
 
-  public updateHeroBanner(config: Partial<HeroBannerConfig>) {
-    const current = db.getHero();
-    const updated = { ...current, ...config };
-    db.updateHero(updated);
-    this.notify();
+  public async updateHeroBanner(config: Partial<HeroBannerConfig>) {
+    try {
+      const current = db.getHero();
+      const updated = { ...current, ...config };
+      await api.updateHero(updated);
+      db.updateHero(updated);
+      this.notify();
+    } catch (e) {
+      console.error('❌ Hero update failed (API required):', e);
+      throw e;
+    }
   }
 
   // --- Cart & Wishlist ---
@@ -319,59 +383,78 @@ class Store {
     this.notify();
   }
 
-  public addCoupon(code: string, discountPercent: number) {
+  public async addCoupon(code: string, discountPercent: number) {
     const cleanCode = code.trim().toUpperCase();
-    if (db.getCoupons().some((c) => c.code === cleanCode)) return;
-    db.addCoupon({ code: cleanCode, discountPercent, isUsed: false });
-    this.notify();
+    try {
+      const coupon = await api.createCoupon(cleanCode, discountPercent);
+      db.addCoupon(coupon);
+      this.notify();
+      return coupon;
+    } catch (e) {
+      console.error('❌ Coupon creation failed (API required):', e);
+      throw e;
+    }
   }
 
-  public deleteCoupon(code: string) {
-    db.deleteCoupon(code);
-    if (this.appliedCoupon?.code === code) this.appliedCoupon = null;
-    this.notify();
+  public async deleteCoupon(code: string) {
+    try {
+      await api.deleteCoupon(code);
+      db.deleteCoupon(code);
+      if (this.appliedCoupon?.code === code) this.appliedCoupon = null;
+      this.notify();
+    } catch (e) {
+      console.error('❌ Coupon deletion failed (API required):', e);
+      throw e;
+    }
   }
 
   // --- Orders ---
-  public placeOrder(orderData: Omit<Order, 'id' | 'date' | 'status' | 'trackingNumber'>): Order {
-    const orderId = `ATL-${Math.floor(100000 + Math.random() * 900000)}`;
-    const tracking = `ATL-TRK-${Math.floor(1000000 + Math.random() * 9000000)}`;
-
-    const newOrder: Order = {
-      ...orderData,
-      id: orderId,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      status: 'Processing',
-      trackingNumber: tracking
-    };
-
-    if (this.appliedCoupon) {
-      const c = db.getCoupons().find((cp) => cp.code === this.appliedCoupon?.code);
-      if (c) {
-        c.isUsed = true;
-        c.usedByEmail = this.currentUser?.email;
-        db.updateCoupon(c);
+  public async placeOrder(orderData: Omit<Order, 'id' | 'date' | 'status' | 'trackingNumber'>): Promise<Order> {
+    try {
+      const backendOrder = await api.placeOrder(orderData);
+      
+      // Update local cache with backend response
+      db.addOrder(backendOrder);
+      
+      // Mark coupon as used if applied
+      if (this.appliedCoupon) {
+        const c = db.getCoupons().find((cp) => cp.code === this.appliedCoupon?.code);
+        if (c) {
+          c.isUsed = true;
+          c.usedByEmail = this.currentUser?.email;
+          db.updateCoupon(c);
+        }
+        this.appliedCoupon = null;
       }
-      this.appliedCoupon = null;
+
+      // Reduce stock locally to match backend
+      backendOrder.items.forEach((item: Order['items'][number]) => {
+        const prod = db.getProductById(item.productId);
+        if (prod) {
+          prod.stock = Math.max(0, prod.stock - item.quantity);
+          db.updateProduct(prod);
+        }
+      });
+
+      this.cart = [];
+      this.notify();
+      return backendOrder;
+    } catch (e) {
+      console.error('❌ Order placement failed (API required):', e);
+      throw e;
     }
-
-    newOrder.items.forEach((item: Order['items'][number]) => {
-      const prod = db.getProductById(item.productId);
-      if (prod) {
-        prod.stock = Math.max(0, prod.stock - item.quantity);
-        db.updateProduct(prod);
-      }
-    });
-
-    db.addOrder(newOrder);
-    this.cart = [];
-    this.notify();
-    return newOrder;
   }
 
-  public updateOrderStatus(orderId: string, status: Order['status']) {
-    db.updateOrderStatus(orderId, status);
-    this.notify();
+  public async updateOrderStatus(orderId: string, status: Order['status']) {
+    try {
+      await api.updateOrderStatus(orderId, status);
+      db.updateOrderStatus(orderId, status);
+      this.notify();
+      return db.getOrders().find((o) => o.id === orderId);
+    } catch (e) {
+      console.error('❌ Order status update failed (API required):', e);
+      throw e;
+    }
   }
 
   // --- Product CRUD (Admin) ---
@@ -385,9 +468,15 @@ class Store {
     this.notify();
   }
 
-  public deleteProduct(productId: string) {
-    db.deleteProduct(productId);
-    this.notify();
+  public async deleteProduct(productId: string) {
+    try {
+      await api.deleteProduct(productId);
+      db.deleteProduct(productId);
+      this.notify();
+    } catch (e) {
+      console.error('❌ Product deletion failed (API required):', e);
+      throw e;
+    }
   }
 
   // --- Calculations ---

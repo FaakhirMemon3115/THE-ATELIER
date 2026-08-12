@@ -1,9 +1,9 @@
-import { PRODUCTS_DATA } from '../data/products';
 import type { Product } from '../data/products';
+import { store } from '../data/mockState';
 
 export function renderSearchOverlay(query = ''): string {
   const filteredProducts: Product[] = query.trim()
-    ? PRODUCTS_DATA.filter(
+    ? store.products.filter(
         (p) =>
           p.name.toLowerCase().includes(query.toLowerCase()) ||
           p.category.toLowerCase().includes(query.toLowerCase()) ||
